@@ -20,3 +20,11 @@ model lxc {
   lxc_compose_status String
   created_at        DateTime @default(now())
 }
+
+model registry {
+  id   String @id @default(uuid())
+  name String
+  version String
+  hosted_on String 
+  server_url String?
+}
