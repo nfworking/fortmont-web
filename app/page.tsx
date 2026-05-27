@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button"
+
 
 export default function Home() {
   const [lxcs, setLxcs] = useState<any[]>([]);
@@ -35,14 +37,30 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black p-6">
+    <div className="min-h-screen bg-zinc-50 dark:bg-black font-sans">
+      <header className="w-full bg-white dark:bg-black border-b border-gray-200 dark:border-gray-700 fixed top-0 left-0 right-0 z-20">
+        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="text-xl font-bold text-gray-800 dark:text-gray-100">FortmontAPI</div>
+            <nav className="hidden md:flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300">
+              <a href="#" className="hover:underline">Home</a>
+              <a href="#registry" className="hover:underline">Registry</a>
+              <a href="#lxc" className="hover:underline">LXC</a>
+            </nav>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button variant="outline" size="sm" onClick={() => window.location.href = "/admin"}>
+              Admin Console
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex flex-col flex-1 items-center justify-start p-6 pt-20">
       <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-4">
         Welcome to FortmontAPI
       </h1>
-      <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-        Your API for managing LXC containers with ease.
-      </p>
-      <p className="text-md text-gray-500 dark:text-gray-500 mb-12">
+      <p className="text-md text-gray-800 dark:text-gray-100 mb-12">
         Registry info follows below
       </p>
      {registry.length === 0 ? (
@@ -55,18 +73,18 @@ export default function Home() {
           </p>
         </div>
       ) : (
-        <div className="w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+        <div className="w-full max-w-4xl bg-white dark:bg-black border border-gray-300 dark:border-gray-600 rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
             Registry Server Information
           </h2>
           <table className="min-w-full table-auto">
             <thead>
               <tr>
-                <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">ID</th>
-                <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">Name</th>
-                <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">Version</th>
-                <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">Hosted on</th>
-                <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">Server URL</th>
+                <th className="px-4 py-2 text-left text-gray-600 dark:text-green-600">ID</th>
+                <th className="px-4 py-2 text-left text-gray-600 dark:text-green-600">Name</th>
+                <th className="px-4 py-2 text-left text-gray-600 dark:text-green-600">Version</th>
+                <th className="px-4 py-2 text-left text-gray-600 dark:text-green-600">Hosted on</th>
+                <th className="px-4 py-2 text-left text-gray-600 dark:text-green-600">Server URL</th>
               </tr>
             </thead>
             <tbody>
@@ -85,20 +103,21 @@ export default function Home() {
           </table>
         </div>
       )}
-      <div className="w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 overflow-auto">
-        <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
-          Results from the remote database:
-        </h2>
+      <p className=" font-semibold text-gray-800 dark:text-gray-200 mb-4">
+            lxc info follows below
+          </p>
+      <div className="w-full max-w-4xl bg-white dark:bg-black border border-gray-300 dark:border-gray-600 rounded-lg shadow-md p-6 overflow-auto">
+        
 
         <table className="min-w-full table-auto">
           <thead>
             <tr>
-              <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">IP</th>
-              <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">Status</th>
-              <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">Role</th>
-              <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">Compose Status</th>
-              <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">Created At</th>
-              <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">Unique ID</th>
+              <th className="px-4 py-2 text-left text-gray-600 dark:text-green-600">IP</th>
+              <th className="px-4 py-2 text-left text-gray-600 dark:text-green-600">Status</th>
+              <th className="px-4 py-2 text-left text-gray-600 dark:text-green-600">Role</th>
+              <th className="px-4 py-2 text-left text-gray-600 dark:text-green-600">Compose Status</th>
+              <th className="px-4 py-2 text-left text-gray-600 dark:text-green-600">Created At</th>
+              <th className="px-4 py-2 text-left text-gray-600 dark:text-green-600">Unique ID</th>
             </tr>
           </thead>
 
@@ -124,6 +143,7 @@ export default function Home() {
           </tbody>
         </table>
       </div>
+      </main>
     </div>
   );
 }
