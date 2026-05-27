@@ -2,35 +2,69 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+### Requirements
+
+- MYsql Server v8.0.0 or higher and open to 0.0.0.0 or LAN ip
+- A mysql user with access for logon from any url
+- A server with 2GB RAM and port 80 open for API server
+
+### Pre-Install steps
+
+- Install Prisman globally using `bash 
+ pnpm install prisma -g 
+ `
+
+- Install package modules with your package manager
+
+- Run ` pnpm exec prisma generate && pnpm exec prisma migrate dev --name init`
+
+#### Note; Only run prisma migrate if you dont have a exisitng database with the included schema
+
+### Run the development server:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm run dev
+
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Use the included Webui for viewing database entries
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Open localhost:3000 (for dev) : lanip:80 (production)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### API routes implemented
 
-## Learn More
+- `/api/xc`
+  - #### HTTP POST Requirements for creating/registering lxc's
+    ````json
+     {
+        "lxc_ip": "10.0.0.1",
+        "lxc_role": "mysql",
+        "lxc_status": "disabled",
+        "lxc_compose_status": "pending"
+      }
+       ```
+    ````
+  - #### HTTP GET endpoint
 
-To learn more about Next.js, take a look at the following resources:
+    `/api/lxc`
+    - Optional params include lxc_ip, lxc_role, lxc_status, lxc_compose_status to filter by certain params
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+  - #### HTTP PATCH requrements
+    - **Required** (params => lxc_unique_id) -> which ID you want to update, unique to the lxc and the role
+    - **Required fields to update before updating files** (body => lxc_status **OR** lxc_compose_status) -> **Update** to maintance before editing any related files
+    - **PATCH Json requirements** All fields are optional, dont need to include all->
+      ```json
+      {
+        "lxc_ip": "10.0.0.1",
+        "lxc_role": "mysql",
+        "lxc_status": "disabled",
+        "lxc_compose_status": "pending"
+      }
+      ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Features to cimplement 
+  - **lxc_ip verification to make sure it exists and updating lxc status if IP returns false**
+  - **Addition of lxc hostname and service url to identify lxc purpose**
+  - **Addition of lxc hardware information and vm host information**
+  - **Automatic updating of service urls and status if in maintence mode or disabled**
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

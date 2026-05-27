@@ -38,3 +38,45 @@ export async function POST(req: Request) {
 
   return Response.json(lxc);
 }
+
+export async function DELETE(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const lxc_unique_id = searchParams.get("lxc_unique_id") ?? undefined;
+
+  if (!lxc_unique_id) {
+    return Response.json({ error: "Missing lxc_unique_id" }, { status: 400 });
+  }
+
+  const lxc = await prisma.lxc.delete({
+    where: {
+      lxc_unique_id,
+    },
+  });
+
+  return Response.json(lxc);
+}
+
+export async function PATCH(req: Request) {
+  const body = await req.json();
+
+  const { searchParams } = new URL(req.url);
+  const lxc_unique_id = searchParams.get("lxc_unique_id") ?? undefined;
+
+  if (!lxc_unique_id) {
+    return Response.json({ error: "Missing lxc_unique_id" }, { status: 400 });
+  }
+
+  const lxc = await prisma.lxc.update({
+    where: {
+      lxc_unique_id,
+    },
+    data: {
+      lxc_ip: body.lxc_ip,
+      lxc_role: body.lxc_role,
+      lxc_status: body.lxc_status,
+      lxc_compose_status: body.lxc_compose_status
+    },
+  });
+
+  return Response.json(lxc);
+}
