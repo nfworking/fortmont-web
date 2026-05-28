@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
+
+
 
 export const runtime = "nodejs";
 
