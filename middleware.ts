@@ -40,7 +40,7 @@ export default auth(async (req) => {
   /*
    * Protected pages
    */
-  const isProtectedRoute = protectedRoutes.includes(path);
+  const isProtectedRoute = protectedRoutes.some((route) => path.startsWith(route));
 
   if (isProtectedRoute && !isLoggedIn) {
     return NextResponse.redirect(
@@ -52,7 +52,7 @@ export default auth(async (req) => {
    * Prevent logged-in users
    * from seeing auth pages
    */
-  const isAuthPageRoute = authPageRoutes.includes(path);
+  const isAuthPageRoute = authPageRoutes.some((route) => path.startsWith(route));
 
   if (isLoggedIn && isAuthPageRoute) {
     return NextResponse.redirect(

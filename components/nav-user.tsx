@@ -99,6 +99,16 @@ export function NavUser({ user }: Props) {
                 Logout
               </Button>
             </DropdownMenuItem>
+            <DropdownMenuItem>
+
+                <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => window.location.href = "/dashboard/users"}
+              >
+                Access Site Users
+              </Button>
+              </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

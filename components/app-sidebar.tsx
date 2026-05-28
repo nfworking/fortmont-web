@@ -42,13 +42,13 @@ const data = {
     },
     
     {
-      title: "Profile",
-      url: "/profile",
+      title: "Site Users",
+      url: "/users",
       icon: (
         <UsersIcon
         />
       ),
-    },
+     },
   ],
   navClouds: [
     {
