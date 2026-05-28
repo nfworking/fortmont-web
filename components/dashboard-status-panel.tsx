@@ -27,7 +27,11 @@ export function DashboardStatusPanel() {
 
   useEffect(() => {
     async function load() {
-      const res = await fetch("/api/lxc");
+      const res = await fetch("/api/lxc", {
+        headers: {
+          "x-api-key": process.env.NEXT_PUBLIC_API_KEY!,
+        },
+      });
       if (!res.ok) {
         setLxcs([]);
         return;
@@ -42,7 +46,11 @@ export function DashboardStatusPanel() {
 
   useEffect(() => {
     async function load() {
-      const res = await fetch("/api/registry");
+      const res = await fetch("/api/registry", {
+        headers: {
+          "x-api-key": process.env.API_KEY!,
+        },
+      });
       if (!res.ok) {
         setRegistry([]);
         return;

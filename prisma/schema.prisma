@@ -28,3 +28,13 @@ model registry {
   hosted_on String 
   server_url String?
 }
+
+model apiUsers {
+  id  String @id @default(uuid())
+  fName String
+  lName String
+  publicPhoto String?
+  department String?
+  role String?
+  personalEmail String
+}
