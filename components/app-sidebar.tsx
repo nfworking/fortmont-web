@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 import Link from "next/link"
 
 import { NavMain } from "@/components/nav-main"
@@ -10,11 +9,12 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarRail,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon, Server, ServerIcon } from "lucide-react"
+import { CommandIcon, DatabaseIcon, LayoutDashboardIcon, ServerIcon, UsersIcon } from "lucide-react"
 
 const data = {
   user: {
@@ -81,13 +81,15 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
-            >
+            <SidebarMenuButton asChild size="lg" className="data-[slot=sidebar-menu-button]:p-1.5!">
               <Link href="/dashboard">
-                <CommandIcon className="size-5!" />
-                <span className="text-base font-semibold">Acme Inc.</span>
+                <div className="flex aspect-square size-8 items-center justify-center rounded-sm bg-primary">
+                  <CommandIcon className="size-5 text-primary-foreground" />
+                </div>
+                <div className="flex flex-col gap-0.5 leading-none">
+                  <span className="text-sm font-semibold">Fortmont API</span>
+                  <span className="text-xs text-muted-foreground">Admin dashboard</span>
+                </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -99,6 +101,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       <SidebarFooter>
         <NavUser user={user ?? data.user} />
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   )
 }
