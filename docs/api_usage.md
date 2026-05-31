@@ -30,3 +30,20 @@
       }
       ```
 -  ``` /api/registry```
+
+### Auth profile updates
+
+- `PATCH /api/auth`
+  - Requires `Authorization: Bearer <token>` from the login endpoint.
+  - Updates the signed-in user by default.
+  - Admins can update another user by passing `?id=<userId>`.
+  - Supported fields in the JSON body:
+    ```json
+    {
+      "displayName": "Ada Lovelace",
+      "email": "ada@example.com",
+      "role": "admin",
+      "phone": "+1-555-0100",
+      "avatarUrl": "https://example.com/avatar.png"
+    }
+    ```

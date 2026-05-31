@@ -44,6 +44,9 @@ model AppUsers {
   username     String   @unique
   displayName  String?
   email        String?  @unique
+  role         String?
+  avatarUrl    String?
+  phone        String?
   passwordHash String
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())

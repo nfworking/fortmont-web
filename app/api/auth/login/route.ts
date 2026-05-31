@@ -55,6 +55,9 @@ export async function POST(request: NextRequest) {
       email: true,
       passwordHash: true,
       isActive: true,
+      role: true,
+      phone: true,
+      avatarUrl: true,
     },
   });
 
@@ -77,6 +80,9 @@ export async function POST(request: NextRequest) {
       name: user.displayName ?? user.username,
       username: user.username,
       isActive: user.isActive,
+      role: user.role,
+      phone: user.phone,
+      avatarUrl: user.avatarUrl,
     },
   });
 
@@ -89,6 +95,11 @@ export async function POST(request: NextRequest) {
         username: user.username,
         displayName: user.displayName,
         email: user.email,
+        isActive: user.isActive,
+        role: user.role,
+        phone: user.phone,
+        avatarUrl: user.avatarUrl,
+
       },
     },
     { status: 200 },

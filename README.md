@@ -51,7 +51,7 @@ pnpm run dev
 
 
 
-### Features to cimplement 
+### Features to implement 
   - **lxc_ip verification to make sure it exists and updating lxc status if IP returns false**
   - **Addition of lxc hostname and service url to identify lxc purpose**
   - **Addition of lxc hardware information and vm host information**
