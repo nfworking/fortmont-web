@@ -47,6 +47,7 @@ model AppUsers {
   role         String?
   avatarUrl    String?
   phone        String?
+  isEntraUser  Boolean? @default(false)
   passwordHash String
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
