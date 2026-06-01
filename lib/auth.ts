@@ -1,37 +1,24 @@
+import "server-only";
 import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import Credentials from "next-auth/providers/credentials";
-
+import { authConfig } from "@/lib/auth.config";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 
 function normalizeNullableString(value: unknown): string | null | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  if (value === null) {
-    return null;
-  }
-
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
-
   return trimmed ? trimmed : null;
 }
 
 function pickEntraValue(...values: unknown[]) {
   for (const value of values) {
     const normalized = normalizeNullableString(value);
-
-    if (typeof normalized === "string") {
-      return normalized;
-    }
+    if (typeof normalized === "string") return normalized;
   }
-
   return undefined;
 }
 
@@ -52,9 +39,7 @@ async function syncEntraUser(profile: Record<string, unknown> | undefined) {
   const displayName = pickEntraValue(profile?.name, profile?.given_name, profile?.family_name);
   const avatarUrl = pickEntraValue(profile?.picture, profile?.avatarUrl, profile?.image);
 
-  if (!email && !username) {
-    return null;
-  }
+  if (!email && !username) return null;
 
   const existingUser = await prisma.appUsers.findFirst({
     where: {
@@ -93,7 +78,7 @@ async function syncEntraUser(profile: Record<string, unknown> | undefined) {
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  secret: process.env.AUTH_SECRET,
+  ...authConfig,
   providers: [
     Credentials({
       name: "Username and password",
@@ -102,32 +87,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const usernameValue = credentials?.username;
-        const passwordValue = credentials?.password;
-
         const username =
-          typeof usernameValue === "string"
-            ? usernameValue.trim().toLowerCase()
+          typeof credentials?.username === "string"
+            ? credentials.username.trim().toLowerCase()
             : "";
-        const password = typeof passwordValue === "string" ? passwordValue : "";
+        const password =
+          typeof credentials?.password === "string" ? credentials.password : "";
 
-        if (!username || !password) {
-          return null;
-        }
+        if (!username || !password) return null;
 
         const appUser = await prisma.appUsers.findUnique({
           where: { username },
         });
 
-        if (!appUser || !appUser.isActive) {
-          return null;
-        }
-
-        const passwordMatches = verifyPassword(password, appUser.passwordHash);
-
-        if (!passwordMatches) {
-          return null;
-        }
+        if (!appUser || !appUser.isActive) return null;
+        if (!verifyPassword(password, appUser.passwordHash)) return null;
 
         return {
           id: appUser.id,
@@ -194,42 +168,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           isEntraUser?: boolean | null;
         };
 
-        if (typeof token.name === "string") {
-          session.user.name = token.name;
-        }
-
-        if (typeof token.email === "string") {
-          session.user.email = token.email;
-        }
-
+        if (typeof token.name === "string") session.user.name = token.name;
+        if (typeof token.email === "string") session.user.email = token.email;
         if (typeof token.avatarUrl === "string") {
           session.user.image = token.avatarUrl;
           enrichedUser.avatarUrl = token.avatarUrl;
         }
-
-        if (typeof token.sub === "string") {
-          enrichedUser.id = token.sub;
-        }
-
-        if (typeof token.username === "string") {
-          enrichedUser.username = token.username;
-        }
-
-        if (typeof token.role === "string") {
-          enrichedUser.role = token.role;
-        }
-
-        if (typeof token.phone === "string") {
-          enrichedUser.phone = token.phone;
-        }
-
-        if (typeof token.isActive === "boolean") {
-          enrichedUser.isActive = token.isActive;
-        }
-
-        if (typeof token.isEntraUser === "boolean") {
-          enrichedUser.isEntraUser = token.isEntraUser;
-        }
+        if (typeof token.sub === "string") enrichedUser.id = token.sub;
+        if (typeof token.username === "string") enrichedUser.username = token.username;
+        if (typeof token.role === "string") enrichedUser.role = token.role;
+        if (typeof token.phone === "string") enrichedUser.phone = token.phone;
+        if (typeof token.isActive === "boolean") enrichedUser.isActive = token.isActive;
+        if (typeof token.isEntraUser === "boolean") enrichedUser.isEntraUser = token.isEntraUser;
       }
 
       return session;

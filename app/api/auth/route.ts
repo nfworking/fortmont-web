@@ -1,35 +1,20 @@
-import { getToken } from "next-auth/jwt";
 import { NextRequest } from "next/server";
-
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
 function normalizeNullableString(value: unknown): string | null | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  if (value === null) {
-    return null;
-  }
-
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
-
   return trimmed ? trimmed : null;
 }
 
 function normalizeEmail(value: unknown): string | null | undefined {
   const normalized = normalizeNullableString(value);
-
-  if (typeof normalized === "string") {
-    return normalized.toLowerCase();
-  }
-
+  if (typeof normalized === "string") return normalized.toLowerCase();
   return normalized;
 }
 
@@ -38,13 +23,18 @@ function createError(message: string, status: number) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!process.env.AUTH_SECRET) {
-    return createError("Authentication is not configured", 500);
+  const session = await auth();
+
+  if (!session?.user) {
+    return createError("Unauthorized", 401);
   }
 
-  const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
+  const sessionUser = session.user as {
+    id?: string;
+    role?: string;
+  };
 
-  if (!token?.sub) {
+  if (!sessionUser.id) {
     return createError("Unauthorized", 401);
   }
 
@@ -60,10 +50,10 @@ export async function PATCH(request: NextRequest) {
     return createError("Request body must be an object", 400);
   }
 
-  const requestedUserId = request.nextUrl.searchParams.get("id") ?? token.sub;
-  const isAdmin = token.role === "admin";
+  const requestedUserId = request.nextUrl.searchParams.get("id") ?? sessionUser.id;
+  const isAdmin = sessionUser.role === "admin";
 
-  if (requestedUserId !== token.sub && !isAdmin) {
+  if (requestedUserId !== sessionUser.id && !isAdmin) {
     return createError("Forbidden", 403);
   }
 
@@ -79,59 +69,36 @@ export async function PATCH(request: NextRequest) {
 
   if (Object.prototype.hasOwnProperty.call(body, "displayName")) {
     const value = normalizeNullableString((body as { displayName?: unknown }).displayName);
-
-    if (value === undefined) {
-      return createError("displayName must be a string or null", 400);
-    }
-
+    if (value === undefined) return createError("displayName must be a string or null", 400);
     updates.displayName = value;
     hasUpdates = true;
   }
 
   if (Object.prototype.hasOwnProperty.call(body, "email")) {
     const value = normalizeEmail((body as { email?: unknown }).email);
-
-    if (value === undefined) {
-      return createError("email must be a string or null", 400);
-    }
-
+    if (value === undefined) return createError("email must be a string or null", 400);
     updates.email = value;
     hasUpdates = true;
   }
 
   if (Object.prototype.hasOwnProperty.call(body, "role")) {
-    if (!isAdmin) {
-      return createError("Only admins can update role", 403);
-    }
-
+    if (!isAdmin) return createError("Only admins can update role", 403);
     const value = normalizeNullableString((body as { role?: unknown }).role);
-
-    if (value === undefined) {
-      return createError("role must be a string or null", 400);
-    }
-
+    if (value === undefined) return createError("role must be a string or null", 400);
     updates.role = value;
     hasUpdates = true;
   }
 
   if (Object.prototype.hasOwnProperty.call(body, "phone")) {
     const value = normalizeNullableString((body as { phone?: unknown }).phone);
-
-    if (value === undefined) {
-      return createError("phone must be a string or null", 400);
-    }
-
+    if (value === undefined) return createError("phone must be a string or null", 400);
     updates.phone = value;
     hasUpdates = true;
   }
 
   if (Object.prototype.hasOwnProperty.call(body, "avatarUrl")) {
     const value = normalizeNullableString((body as { avatarUrl?: unknown }).avatarUrl);
-
-    if (value === undefined) {
-      return createError("avatarUrl must be a string or null", 400);
-    }
-
+    if (value === undefined) return createError("avatarUrl must be a string or null", 400);
     updates.avatarUrl = value;
     hasUpdates = true;
   }
@@ -141,13 +108,8 @@ export async function PATCH(request: NextRequest) {
   }
 
   const existingUser = await prisma.appUsers.findUnique({
-    where: {
-      id: requestedUserId,
-    },
-    select: {
-      id: true,
-      email: true,
-    },
+    where: { id: requestedUserId },
+    select: { id: true, email: true },
   });
 
   if (!existingUser) {
@@ -158,13 +120,9 @@ export async function PATCH(request: NextRequest) {
     const conflictingUser = await prisma.appUsers.findFirst({
       where: {
         email: updates.email,
-        NOT: {
-          id: requestedUserId,
-        },
+        NOT: { id: requestedUserId },
       },
-      select: {
-        id: true,
-      },
+      select: { id: true },
     });
 
     if (conflictingUser) {
@@ -173,9 +131,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   const updatedUser = await prisma.appUsers.update({
-    where: {
-      id: requestedUserId,
-    },
+    where: { id: requestedUserId },
     data: updates,
     select: {
       id: true,
