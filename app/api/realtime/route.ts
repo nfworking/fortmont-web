@@ -6,28 +6,36 @@ export async function GET() {
   }
 
   try {
-    const res = await fetch("https://ao2.fortmont.me/api2/json/nodes/prodinfra/lxc", {
-      headers: {
-        Authorization: token,
-      },
-      cache: "no-store",
+    const nodes = ["prodinfra", "prodapp"];
+
+    const results = await Promise.all(
+      nodes.map(async (node) => {
+        const res = await fetch(
+          `https://ao2.fortmont.me/api2/json/nodes/${node}/lxc`,
+          {
+            headers: {
+              Authorization: token,
+            },
+            cache: "no-store",
+          }
+        );
+
+        if (!res.ok) {
+          const details = await res.text();
+          throw new Error(`Node ${node} failed: ${res.status} ${details}`);
+        }
+
+        const json = await res.json();
+        return json.data ?? [];
+      })
+    );
+
+    // Merge all node arrays into one
+    const merged = results.flat();
+
+    return Response.json({
+      data: merged,
     });
-
-    if (!res.ok) {
-      const details = await res.text();
-      return Response.json(
-        {
-          error: "Proxmox request failed",
-          status: res.status,
-          details,
-        },
-        { status: res.status }
-      );
-    }
-
-    const data = await res.json();
-
-    return Response.json(data);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to fetch";
     return Response.json({ error: message }, { status: 500 });
