@@ -63,6 +63,14 @@ const data = {
         <ServerIcon
         />
       ),
+     },
+     {
+      title: "DNS Records",
+      url: "/dashboard/dns",
+      icon: (
+        <ServerIcon
+        />
+      ),
      }
     ],
 }

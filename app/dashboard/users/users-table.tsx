@@ -5,16 +5,28 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type ApiUserEntry = {
   id: string;
-  fName: string;
-  lName: string;
-  publicPhoto?: string | null;
-  department?: string | null;
+  username: string;
+  displayName: string | null;
+  email: string | null;
   role?: string | null;
-  personalEmail: string;
+  avatarUrl?: string | null;
+  isActive: boolean;
+  isEntraUser: boolean;
+
 };
 
-function getInitials(firstName: string, lastName: string) {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+
+  if (parts.length === 0) {
+    return "?";
+  }
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
 }
 
 export function UsersTable() {
@@ -22,10 +34,10 @@ export function UsersTable() {
 
   useEffect(() => {
     async function load() {
-      const res = await fetch("/api/apiUsers", {
+      const res = await fetch("/api/users", {
         headers: {
-          "x-api-key": process.env.NEXT_PUBLIC_API_KEY!,
-        },
+          "x-api-key": process.env.NEXT_PUBLIC_API_KEY ?? "",
+        }
       });
 
       if (!res.ok) {
@@ -52,7 +64,7 @@ export function UsersTable() {
               Users overview
             </h1>
             <p className="max-w-2xl text-sm text-muted-foreground md:text-base">
-              Live user records pulled from the Prisma-backed apiUsers model.
+              All the users in your system
             </p>
           </div>
           <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
@@ -64,9 +76,6 @@ export function UsersTable() {
       <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
         <div className="mb-4">
           <h2 className="text-xl font-semibold text-foreground">Users</h2>
-          <p className="text-sm text-muted-foreground">
-            Name, email, department, role, and profile photo from the apiUsers table.
-          </p>
         </div>
 
         <div className="overflow-hidden rounded-xl border border-border/60">
@@ -77,23 +86,29 @@ export function UsersTable() {
                   User
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Email
+                  Username
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Department
+                  Email
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Role
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Active
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   ID
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Entra User
                 </th>
               </tr>
             </thead>
             <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-6 text-sm text-muted-foreground" colSpan={5}>
+                  <td className="px-4 py-6 text-sm text-muted-foreground" colSpan={6}>
                     No users found.
                   </td>
                 </tr>
@@ -103,21 +118,28 @@ export function UsersTable() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Avatar className="size-9">
-                          <AvatarImage src={user.publicPhoto ?? undefined} alt={`${user.fName} ${user.lName}`} />
-                          <AvatarFallback>{getInitials(user.fName, user.lName)}</AvatarFallback>
+                          <AvatarImage
+                            src={user.avatarUrl ?? undefined}
+                            alt={user.displayName ?? user.username}
+                          />
+                          <AvatarFallback>{getInitials(user.displayName ?? user.username)}</AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="text-sm font-medium text-foreground">
-                            {user.fName} {user.lName}
+                            {user.displayName ?? user.username}
                           </div>
-                          <div className="text-xs text-muted-foreground">{user.personalEmail}</div>
+                          <div className="text-xs text-muted-foreground">{user.email ?? "No email"}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-foreground">{user.personalEmail}</td>
-                    <td className="px-4 py-3 text-sm text-foreground">{user.department ?? "-"}</td>
+                    <td className="px-4 py-3 text-sm text-foreground">{user.username}</td>
+                    <td className="px-4 py-3 text-sm text-foreground">{user.email ?? "-"}</td>
                     <td className="px-4 py-3 text-sm text-foreground">{user.role ?? "-"}</td>
+                    <td className="px-4 py-3 text-sm text-foreground">{user.isActive ? "Yes" : "No"}</td>
                     <td className="px-4 py-3 text-sm text-foreground">{user.id}</td>
+                    <td className="px-4 py-3 text-sm text-foreground">{user.isEntraUser ? "Yes" : "No"}</td>
+                     
+          
                   </tr>
                 ))
               )}
