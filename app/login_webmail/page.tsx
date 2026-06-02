@@ -1,7 +1,11 @@
-"use client"
+
 
 import { LoginForm } from "@/components/webmail_login"
 import { GalleryVerticalEndIcon, Mail } from "lucide-react"
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "Fortmont Webmail Login",
+};
 
 export default function LoginPage() {
   return (

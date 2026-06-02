@@ -1,8 +1,12 @@
-"use client"
+
 
 import { LoginForm } from "@/components/login-form"
 import { Globe } from "lucide-react"
+import { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Fortmont Web Login",
+};
 export default function LoginPage() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">

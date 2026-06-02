@@ -7,6 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "Fortmont Account",
+  description: "Dashboard for managing your Fortmont account settings.",
+};
 
 function formatDate(value: Date) {
   return new Intl.DateTimeFormat("en-US", {

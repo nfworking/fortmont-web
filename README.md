@@ -1,11 +1,14 @@
-
+## Fortmont Web & Fortmont Webmail
 
 ### Requirements
 
-- MYsql Server v8.0.0 or higher and open to 0.0.0.0 or LAN ip
-- A mysql user with access for logon from any url
-- A server with 2GB RAM and port 80 open for API server
-- A Azure free account or access to Microsoft Entra ID, with application, users and group creation permisssions
+- Mysql Server v8.0.0 or higher and open to 0.0.0.0 or LAN ip
+- A mysql user with access for logon from any host
+- A server with 2GB RAM and port 80 open for Fortmont Web
+- A Azure free account or access to Microsoft Entra ID, with application, users and group creation permisssions (optional)
+- A provisioned mailbox server (curently tested with mailcow) with IMAPS (tls)
+- A reverse proxy pointing to the instance and port of Fortmont Web (used for secure cookie auth, required)
+
 
 
 ### Pre-Install steps
@@ -16,7 +19,7 @@
 
 - Install package modules with your package manager
 
-- Run ```cp .example.env .env``` and use the example to fill in your own .env (for all env variable usage, see [env.md](./docs/env.md))
+- Run ```cp .example.env .env``` and use the example to fill in your own .env (for env variable usage, see [ENV](./docs/env.md))
 
 - Run ` pnpm exec prisma generate && pnpm exec prisma migrate dev --name init`
 
@@ -31,10 +34,10 @@ pnpm run dev
 
 ### Use the included Webui for viewing database entries
 
-- Open localhost:3000 (for dev) : lanip:80 (production)
+- Open {your_configured_url_in_reverse_proxy}/dashboard
 
 
-### Usage for the api routes and instructions can be found in [api-usage.md](./docs/api_usage.md)
+### API documentation can be found in the [API Docs](./docs/api_usage.md)
 
 
 

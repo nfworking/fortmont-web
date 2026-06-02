@@ -13,10 +13,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Fortmont API",
-  description: "A API for managing your Fortmont server and its users.",
-};
+
+
 
 export default async function RootLayout({
   children,

@@ -1,3 +1,9 @@
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "Fortmont Web Dashboard",
+  description: "Dashboard for managing your Fortmont server and its users.",
+};
+
 export default function Page() {
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
