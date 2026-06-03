@@ -1,13 +1,20 @@
-
-
-import { LoginForm } from "@/components/webmail_login"
-import { GalleryVerticalEndIcon, Mail } from "lucide-react"
+import { LoginForm } from "@/components/webmail_login";
+import { Mail } from "lucide-react";
 import { Metadata } from "next";
+
 export const metadata: Metadata = {
   title: "Fortmont Webmail Login",
 };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: { callbackUrl?: string };
+}) {
+  const params = await searchParams;
+  console.log(params.callbackUrl);
+  
+
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
@@ -19,19 +26,21 @@ export default function LoginPage() {
             Fortmont Webmail
           </a>
         </div>
+
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
-            <LoginForm />
+            <LoginForm callbackUrl={params?.callbackUrl ?? "/dashboard"} />
           </div>
         </div>
       </div>
+
       <div className="relative hidden bg-muted lg:block">
         <img
-          src="https://images.unsplash.com/photo-1779464433263-35e2c02d1cc8?q=80&w=1528&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+          src="https://images.unsplash.com/photo-1779464433263-35e2c02d1cc8?q=80&w=1528&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWxwaG90by1wHx8fGVufDB8fHx8A%3D%3D"
           alt="Image"
-          className="absolute inset-0 h-full w-full object-cover dark:brightness-[1.3] "
+          className="absolute inset-0 h-full w-full object-cover dark:brightness-[1.3]"
         />
       </div>
     </div>
-  )
+  );
 }

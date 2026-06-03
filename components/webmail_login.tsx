@@ -15,11 +15,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowBigRight, ArrowUpRight } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-
+  type LoginFormProps = React.ComponentProps<"form"> & {
+  callbackUrl: string;
+};
 export function LoginForm({
-  className,
+   className,
+  callbackUrl,
   ...props
-}: React.ComponentProps<"form">) {
+}: LoginFormProps) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isLoading2, setIsLoading2] = useState(false);
@@ -27,9 +30,8 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl =
-  searchParams.get("callbackUrl") || "/dashboard";
+
+
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -65,6 +67,8 @@ export function LoginForm({
       setIsLoading2(false);
     }
   };
+
+
 
   return (
     <form className={cn("flex flex-col gap-6", className)} onSubmit={handleLogin} {...props}>
