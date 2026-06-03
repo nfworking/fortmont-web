@@ -126,13 +126,17 @@ export function MailboxOnboarding({
   };
 
   return (
-    <section
-      className={cn(
-        "min-h-screen  flex items-center justify-center px-4 py-12",
-        className
-      )}
-    >
-      <div className="w-full max-w-sm flex flex-col items-center gap-6">
+    <section className="relative min-h-screen flex items-center justify-center px-4 py-12">
+  <div
+    className="absolute inset-0 bg-center bg-cover"
+    style={{ backgroundImage: "url('https://images.unsplash.com/photo-1779464433263-35e2c02d1cc8?q=80&w=1528&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')" }}
+  />
+
+  {/* overlay */}
+  <div className="absolute inset-0 bg-black/40" />
+
+  
+      <div className="relative w-full max-w-sm flex flex-col items-center gap-6">
         {/* Logo */}
         {logo && (
           <a href={logo.url}>
@@ -225,7 +229,7 @@ export function MailboxOnboarding({
                   ) : (
                     <Info className="w-3 h-3 shrink-0" />
                   )}
-                  {emailError || "Use your organisation domain"}
+                  {emailError || "Use your organisation domain (@fortmont.me)"}
                 </p>
               </div>
 

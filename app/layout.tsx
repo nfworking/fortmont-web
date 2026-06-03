@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, The_Girl_Next_Door } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
+import TransitionLayout from "@/components/transitionlayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,9 +32,12 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Providers session={null}>{children}
-          <Toaster richColors position="top-right" />
-        </Providers>
+        <TransitionLayout>
+          <Providers session={null}>
+            {children}
+            <Toaster richColors position="top-right" />
+          </Providers>
+        </TransitionLayout>
       </body>
     </html>
   );
