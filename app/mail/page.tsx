@@ -72,7 +72,8 @@ interface EmailBody {
 interface Email {
   uid: number
   subject: string
-  from: string
+  from?: string
+  to?: string
   date: string
   flags: Record<string, boolean>
   body: EmailBody
@@ -80,9 +81,28 @@ interface Email {
 
 interface MailboxResponse {
   mailbox: string
+  folder?: string
   count: number
   emails: Email[]
 }
+
+type FolderType = "inbox" | "sent" | "drafts" | "starred" | "archive" | "trash"
+
+const navItems: { title: string; icon: typeof Inbox; folder: FolderType }[] = [
+  { title: "Inbox", icon: Inbox, folder: "inbox" },
+  { title: "Drafts", icon: File, folder: "drafts" },
+  { title: "Sent", icon: Send, folder: "sent" },
+  { title: "Starred", icon: Star, folder: "starred" },
+  { title: "Archive", icon: Archive, folder: "archive" },
+  { title: "Trash", icon: Trash2, folder: "trash" },
+]
+
+const labels = [
+  { title: "Work", color: "bg-blue-500" },
+  { title: "Personal", color: "bg-green-500" },
+  { title: "Shopping", color: "bg-orange-500" },
+  { title: "Social", color: "bg-purple-500" },
+]
 
 interface UserSession {
   user?: {
@@ -92,21 +112,12 @@ interface UserSession {
   }
 }
 
-const navItems = [
-  { title: "Inbox", icon: Inbox, active: true },
-  { title: "Drafts", icon: File },
-  { title: "Sent", icon: Send },
-  { title: "Starred", icon: Star },
-  { title: "Archive", icon: Archive },
-  { title: "Trash", icon: Trash2 },
-]
-
-const labels = [
-  { title: "Work", color: "bg-blue-500" },
-  { title: "Personal", color: "bg-green-500" },
-  { title: "Shopping", color: "bg-orange-500" },
-  { title: "Social", color: "bg-purple-500" },
-]
+function getEmailContact(email: Email, folder: FolderType): string {
+  if (folder === "sent") {
+    return email.to || ""
+  }
+  return email.from || ""
+}
 
 function formatDate(dateString: string) {
   const date = new Date(dateString)
@@ -170,6 +181,7 @@ export default function MailClient() {
   const [session, setSession] = useState<UserSession | null>(null)
   const [mailbox, setMailbox] = useState<MailboxResponse | null>(null)
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
+  const [activeFolder, setActiveFolder] = useState<FolderType>("inbox")
   const [loading, setLoading] = useState(true)
   const [emailsLoading, setEmailsLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -181,7 +193,7 @@ export default function MailClient() {
         const data = await res.json()
         setSession(data)
         if (data?.user) {
-          fetchEmails()
+          fetchEmails("inbox")
         }
       } catch (error) {
         console.error("Failed to fetch session:", error)
@@ -192,10 +204,13 @@ export default function MailClient() {
     fetchSession()
   }, [])
 
-  async function fetchEmails() {
+  async function fetchEmails(folder: FolderType) {
     setEmailsLoading(true)
+    setSelectedEmail(null)
     try {
-      const res = await fetch("/api/mailbox", { credentials: "include" })
+      // Different API endpoints for different folders
+      const endpoint = folder === "sent" ? "/api/mailbox/send/get" : "/api/mailbox/inbox"
+      const res = await fetch(endpoint, { credentials: "include" })
       if (res.ok) {
         const data: MailboxResponse = await res.json()
         setMailbox(data)
@@ -207,12 +222,23 @@ export default function MailClient() {
     }
   }
 
+  function handleFolderChange(folder: FolderType) {
+    if (folder !== activeFolder) {
+      setActiveFolder(folder)
+      fetchEmails(folder)
+    }
+  }
+
   const emails = mailbox?.emails || []
   const filteredEmails = emails.filter(
-    (email) =>
-      email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      email.from.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      email.body.text.toLowerCase().includes(searchQuery.toLowerCase())
+    (email) => {
+      const contact = getEmailContact(email, activeFolder)
+      return (
+        email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        email.body.text.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    }
   )
 
   const unreadCount = emails.filter((e) => !e.flags?.seen).length
@@ -279,11 +305,15 @@ export default function MailClient() {
                 <SidebarMenu>
                   {navItems.map((item, index) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton isActive={item.active} tooltip={item.title}>
+                      <SidebarMenuButton
+                        isActive={activeFolder === item.folder}
+                        tooltip={item.title}
+                        onClick={() => handleFolderChange(item.folder)}
+                      >
                         <item.icon className="size-4" />
                         <span>{item.title}</span>
                       </SidebarMenuButton>
-                      {index === 0 && unreadCount > 0 && <SidebarMenuBadge>{unreadCount}</SidebarMenuBadge>}
+                      {item.folder === "inbox" && unreadCount > 0 && <SidebarMenuBadge>{unreadCount}</SidebarMenuBadge>}
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
@@ -359,7 +389,7 @@ export default function MailClient() {
               </span>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={fetchEmails} disabled={emailsLoading}>
+                  <Button variant="ghost" size="icon" onClick={() => fetchEmails(activeFolder)} disabled={emailsLoading}>
                     <RefreshCw className={`size-4 ${emailsLoading ? "animate-spin" : ""}`} />
                   </Button>
                 </TooltipTrigger>
@@ -406,8 +436,9 @@ export default function MailClient() {
                   <div className="p-2">
                     <AnimatePresence>
                       {filteredEmails.map((email, index) => {
-                        const isRead = email.flags?.seen
+                        const isRead = email.flags?.seen || activeFolder === "sent"
                         const isSelected = selectedEmail?.uid === email.uid
+                        const contact = getEmailContact(email, activeFolder)
                         return (
                           <motion.button
                             key={email.uid}
@@ -431,7 +462,7 @@ export default function MailClient() {
                                         : "bg-muted"
                                     }
                                   >
-                                    {getInitials(extractName(email.from))}
+                                    {getInitials(extractName(contact))}
                                   </AvatarFallback>
                                 </Avatar>
                                 {!isRead && (
@@ -445,7 +476,7 @@ export default function MailClient() {
                                       !isRead ? "font-semibold text-foreground" : "text-foreground"
                                     }`}
                                   >
-                                    {extractName(email.from)}
+                                    {activeFolder === "sent" ? "To: " : ""}{extractName(contact)}
                                   </span>
                                   <span className="flex-shrink-0 text-xs text-muted-foreground">
                                     {formatDate(email.date)}
@@ -548,21 +579,24 @@ export default function MailClient() {
                             </div>
                           </div>
 
-                          {/* Sender Info */}
+                          {/* Sender/Recipient Info */}
                           <div className="flex items-start gap-4 rounded-lg bg-muted/50 p-4">
                             <Avatar className="size-12">
                               <AvatarFallback className="text-lg">
-                                {getInitials(extractName(selectedEmail.from))}
+                                {getInitials(extractName(getEmailContact(selectedEmail, activeFolder)))}
                               </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {activeFolder === "sent" ? "To:" : "From:"}
+                                </span>
                                 <span className="font-semibold">
-                                  {extractName(selectedEmail.from)}
+                                  {extractName(getEmailContact(selectedEmail, activeFolder))}
                                 </span>
                               </div>
                               <p className="text-sm text-muted-foreground">
-                                {extractEmail(selectedEmail.from)}
+                                {extractEmail(getEmailContact(selectedEmail, activeFolder))}
                               </p>
                               <p className="mt-1 text-xs text-muted-foreground">
                                 {formatFullDate(selectedEmail.date)}
