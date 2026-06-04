@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   description: "Dashboard for managing your Fortmont DNS settings.",
 };
 
-import { DnsTable } from "@/components/dns-table";
+import { DnsTable } from "@/components/dns/dns-table";
 
 export default function DnsPage() {
   return <DnsTable />;
