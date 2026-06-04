@@ -6,7 +6,7 @@ export const metadata: Metadata = {
 
 
 
-import ProxyPage  from "../../../components/proxy-page";
+import ProxyPage  from "@/components/proxy-page";
 
 export default function Proxy() {
     return <ProxyPage />;

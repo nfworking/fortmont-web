@@ -81,12 +81,20 @@ const data = {
       ),
      },
      {
+      title: "SSL Certificates",
+      url: "/dashboard/certs",
+      icon: (
+        <GlobeLock />
+      )
+    },
+    {
       title: "Webmail",
       url: "/mail",
       icon: (
         <MailIcon />
       ),
-     }
+     },
+
     ],
 }
 

@@ -1,82 +1,31 @@
 "use client"
 
 import * as React from "react"
-import { useEffect, useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useEffect, useRef, useState } from "react"
 import {
   Archive,
-  ArchiveX,
-  ArrowLeft,
+  AlertTriangle,
+  CornerUpLeft,
+  CornerUpRight,
+  ChevronDown,
+  Clock,
+  MoreVertical,
   File,
   Inbox,
   Loader2,
   LogOut,
   Mail,
-  PenSquare,
-  Reply,
-  ReplyAll,
-  Forward,
-  Search,
+  MessageCircle,
   Send,
+  ShoppingCart,
+  Megaphone,
   Star,
   Trash2,
-  MoreHorizontal,
-  RefreshCw,
-  X,
-  ChevronRight,
-  Sparkles,
+  Users,
 } from "lucide-react"
-
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuBadge,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarRail,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { signOut } from "next-auth/react"
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface EmailBody {
   text: string
@@ -102,22 +51,6 @@ interface MailboxResponse {
 
 type FolderType = "inbox" | "sent" | "drafts" | "starred" | "archive" | "trash"
 
-const navItems: { title: string; icon: typeof Inbox; folder: FolderType }[] = [
-  { title: "Inbox",   icon: Inbox,   folder: "inbox"   },
-  { title: "Drafts",  icon: File,    folder: "drafts"  },
-  { title: "Sent",    icon: Send,    folder: "sent"    },
-  { title: "Starred", icon: Star,    folder: "starred" },
-  { title: "Archive", icon: Archive, folder: "archive" },
-  { title: "Trash",   icon: Trash2,  folder: "trash"   },
-]
-
-const labels = [
-  { title: "Work",     color: "bg-blue-400"   },
-  { title: "Personal", color: "bg-emerald-400"},
-  { title: "Shopping", color: "bg-amber-400"  },
-  { title: "Social",   color: "bg-violet-400" },
-]
-
 interface UserSession {
   user?: {
     name?: string | null
@@ -126,7 +59,7 @@ interface UserSession {
   }
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getEmailContact(email: Email, folder: FolderType): string {
   return folder === "sent" ? email.to || "" : email.from || ""
@@ -134,18 +67,23 @@ function getEmailContact(email: Email, folder: FolderType): string {
 
 function formatDate(dateString: string) {
   const date = new Date(dateString)
-  const now  = new Date()
+  const now = new Date()
   const days = Math.floor((now.getTime() - date.getTime()) / 86_400_000)
   if (days === 0) return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
   if (days === 1) return "Yesterday"
-  if (days < 7)  return date.toLocaleDateString("en-US", { weekday: "short" })
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  if (days < 7) return date.toLocaleDateString("en-US", { weekday: "short" })
+  if (days < 365) return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }
 
 function formatFullDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    weekday: "long", year: "numeric", month: "long",
-    day: "numeric", hour: "numeric", minute: "2-digit",
+  return new Date(dateString).toLocaleString("en-US", {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   })
 }
 
@@ -175,27 +113,103 @@ function getInitials(name: string) {
 
 function getEmailSnippet(body: EmailBody): string {
   const text = body.text || ""
-  return text.trim().slice(0, 90) + (text.length > 90 ? "…" : "")
+  return text.trim().slice(0, 100) + (text.length > 100 ? "…" : "")
 }
 
-// ─── Avatar colour palette (deterministic by initials) ───────────────────────
 const AVATAR_PALETTES = [
-  "bg-rose-500/20 text-rose-300",
-  "bg-sky-500/20 text-sky-300",
-  "bg-violet-500/20 text-violet-300",
-  "bg-amber-500/20 text-amber-300",
-  "bg-emerald-500/20 text-emerald-300",
-  "bg-pink-500/20 text-pink-300",
-  "bg-indigo-500/20 text-indigo-300",
-  "bg-teal-500/20 text-teal-300",
+  { bg: "#142230", text: "#6fa3d4" },
+  { bg: "#1e1a30", text: "#9f70c4" },
+  { bg: "#1a2a1a", text: "#5abf8a" },
+  { bg: "#251a10", text: "#c4884a" },
+  { bg: "#1a1a30", text: "#7070d4" },
+  { bg: "#2a1a1a", text: "#d47070" },
+  { bg: "#101e20", text: "#50b4c0" },
+  { bg: "#201a10", text: "#c0a050" },
 ]
+
 function avatarPalette(str: string) {
   let hash = 0
   for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) | 0
   return AVATAR_PALETTES[Math.abs(hash) % AVATAR_PALETTES.length]
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Tag colour map ───────────────────────────────────────────────────────────
+
+const TAG_STYLES: Record<string, React.CSSProperties> = {
+  work:      { borderColor: "#2a3a5a", color: "#6fa3d4", background: "#141c2a" },
+  personal:  { borderColor: "#1e3a2a", color: "#5abf8a", background: "#101c14" },
+  important: { borderColor: "#3a2a1a", color: "#c4884a", background: "#1e1408" },
+  budget:    { borderColor: "#2a1a3a", color: "#9f70c4", background: "#180e20" },
+  meeting:   { borderColor: "#2a2a1a", color: "#b4b458", background: "#1c1c08" },
+  social:    { borderColor: "#3a1a2a", color: "#c460a0", background: "#20081a" },
+  default:   { borderColor: "#333",    color: "#888",    background: "#1e1e1e" },
+}
+
+function tagStyle(tag: string): React.CSSProperties {
+  return TAG_STYLES[tag.toLowerCase()] ?? TAG_STYLES.default
+}
+
+// ─── Sidebar nav config ───────────────────────────────────────────────────────
+
+const FOLDER_NAV: { label: string; folder: FolderType; icon: React.ReactNode; badge?: number }[] = [
+  { label: "Inbox",   folder: "inbox",   icon: <Inbox   size={14} /> },
+  { label: "Drafts",  folder: "drafts",  icon: <File    size={14} /> },
+  { label: "Sent",    folder: "sent",    icon: <Send    size={14} /> },
+  { label: "Starred", folder: "starred", icon: <Star    size={14} /> },
+  { label: "Archive", folder: "archive", icon: <Archive size={14} /> },
+  { label: "Trash",   folder: "trash",   icon: <Trash2  size={14} /> },
+]
+
+const CATEGORY_NAV = [
+  { label: "Social",     icon: <Users       size={14} />, count: 972  },
+  { label: "Updates",    icon: <Clock       size={14} />, count: 342  },
+  { label: "Forums",     icon: <MessageCircle size={14} />, count: 128 },
+  { label: "Shopping",   icon: <ShoppingCart size={14} />, count: 8   },
+  { label: "Promotions", icon: <Megaphone size={14} />, count: 21  },
+]
+
+// ─── Styles (inline, no Tailwind dependency for layout) ───────────────────────
+
+const S = {
+  root: {
+    display: "flex",
+    height: "100vh",
+    background: "#111",
+    color: "#e8e8e8",
+    fontFamily: "var(--font-sans, system-ui, sans-serif)",
+    fontSize: "13px",
+    overflow: "hidden",
+  } as React.CSSProperties,
+
+  sidebar: {
+    width: "200px",
+    flexShrink: 0,
+    background: "#161616",
+    borderRight: "0.5px solid #2a2a2a",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  } as React.CSSProperties,
+
+  listPanel: {
+    width: "310px",
+    flexShrink: 0,
+    borderRight: "0.5px solid #2a2a2a",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  } as React.CSSProperties,
+
+  readingPane: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    background: "#111",
+  } as React.CSSProperties,
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function MailClient() {
   const [session,       setSession]       = useState<UserSession | null>(null)
@@ -205,13 +219,18 @@ export default function MailClient() {
   const [loading,       setLoading]       = useState(true)
   const [emailsLoading, setEmailsLoading] = useState(false)
   const [searchQuery,   setSearchQuery]   = useState("")
+  const [activeTab,     setActiveTab]     = useState<"all" | "unread">("all")
+  const [muteThread,    setMuteThread]    = useState(false)
 
-  const [composeOpen,    setComposeOpen]    = useState(false)
-  const [composeTo,      setComposeTo]      = useState("")
-  const [composeSubject, setComposeSubject] = useState("")
-  const [composeBody,    setComposeBody]    = useState("")
-  const [sending,        setSending]        = useState(false)
-  const [sendError,      setSendError]      = useState<string | null>(null)
+  // Compose / reply state
+  const [replyTo,      setReplyTo]      = useState("")
+  const [replySubject, setReplySubject] = useState("")
+  const [replyBody,    setReplyBody]    = useState("")
+  const [sending,      setSending]      = useState(false)
+  const [sendError,    setSendError]    = useState<string | null>(null)
+  const [sendSuccess,  setSendSuccess]  = useState(false)
+
+  const replyRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     async function fetchSession() {
@@ -228,6 +247,18 @@ export default function MailClient() {
     }
     fetchSession()
   }, [])
+
+  // When a new email is selected, pre-fill the reply box
+  useEffect(() => {
+    if (!selectedEmail) return
+    const contact = getEmailContact(selectedEmail, activeFolder)
+    setReplyTo(extractEmail(contact))
+    setReplySubject(`Re: ${selectedEmail.subject}`)
+    setReplyBody("")
+    setSendError(null)
+    setSendSuccess(false)
+    setMuteThread(false)
+  }, [selectedEmail, activeFolder])
 
   async function fetchEmails(folder: FolderType) {
     setEmailsLoading(true)
@@ -259,689 +290,462 @@ export default function MailClient() {
     }
   }
 
-  async function handleSendEmail(e: React.FormEvent) {
+  async function handleSendReply(e: React.FormEvent) {
     e.preventDefault()
-    if (!composeTo.trim()) { setSendError("Please enter a recipient email address"); return }
-    setSending(true); setSendError(null)
+    if (!replyTo.trim()) { setSendError("No recipient address"); return }
+    if (!replyBody.trim()) { setSendError("Message body is empty"); return }
+    setSending(true)
+    setSendError(null)
+    setSendSuccess(false)
     try {
       const res = await fetch("/api/mailbox/send", {
-        method: "POST", credentials: "include",
+        method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: composeTo.trim(), subject: composeSubject.trim(), text: composeBody }),
+        body: JSON.stringify({
+          to:      replyTo.trim(),
+          subject: replySubject.trim(),
+          text:    replyBody,
+        }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || "Failed to send email")
+        throw new Error(data.error || "Failed to send")
       }
-      setComposeOpen(false); setComposeTo(""); setComposeSubject(""); setComposeBody("")
+      setSendSuccess(true)
+      setReplyBody("")
       if (activeFolder === "sent") fetchEmails("sent")
-    } catch (error) {
-      setSendError(error instanceof Error ? error.message : "Failed to send email")
+    } catch (err) {
+      setSendError(err instanceof Error ? err.message : "Failed to send")
     } finally {
       setSending(false)
     }
   }
 
-  function handleComposeClose() { if (!sending) { setComposeOpen(false); setSendError(null) } }
-
-  function openReplyCompose(email: Email) {
-    const contact = getEmailContact(email, activeFolder)
-    setComposeTo(extractEmail(contact))
-    setComposeSubject(`Re: ${email.subject}`)
-    setComposeBody(`\n\n—\nOn ${formatFullDate(email.date)}, ${extractName(contact)} wrote:\n${email.body.text}`)
-    setComposeOpen(true)
-  }
-
   function openForwardCompose(email: Email) {
     const contact = getEmailContact(email, activeFolder)
-    setComposeTo("")
-    setComposeSubject(`Fwd: ${email.subject}`)
-    setComposeBody(`\n\n—\nForwarded from ${extractName(contact)} on ${formatFullDate(email.date)}:\n${email.body.text}`)
-    setComposeOpen(true)
+    setReplyTo("")
+    setReplySubject(`Fwd: ${email.subject}`)
+    setReplyBody(`\n\n— Forwarded from ${extractName(contact)} on ${formatFullDate(email.date)} —\n${email.body.text}`)
+    replyRef.current?.focus()
   }
 
-  const emails = mailbox?.emails || []
+  const emails = mailbox?.emails ?? []
+
   const filteredEmails = emails.filter((email) => {
     const contact = getEmailContact(email, activeFolder)
-    return (
+    const matchesSearch =
       email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
       email.body.text.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const matchesTab = activeTab === "all" || !email.flags?.seen
+    return matchesSearch && matchesTab
   })
+
   const unreadCount = emails.filter((e) => !e.flags?.seen).length
 
-  // ── Loading screen ──────────────────────────────────────────────────────────
+  // ── Loading ──────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center">
-            <div className="absolute inset-0 animate-ping rounded-full bg-muted opacity-40" />
-            <Mail className="relative size-5 text-foreground/80" />
-          </div>
-          <p className="text-xs tracking-widest text-muted-foreground uppercase">Loading</p>
-        </motion.div>
+      <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#111", flexDirection: "column", gap: "12px" }}>
+        <Mail size={24} color="#555" />
+        <p style={{ color: "#555", fontSize: "12px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Loading</p>
       </div>
     )
   }
 
-  // ── Sign-in screen ──────────────────────────────────────────────────────────
+  // ── Sign-in ──────────────────────────────────────────────────────────────────
   if (!session?.user) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-8 bg-background">
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-          className="flex flex-col items-center gap-6">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-card">
-            <Mail className="h-6 w-6 text-foreground/80" />
-          </div>
-          <div className="text-center">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Mail</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Sign in to access your mailbox</p>
-          </div>
-          <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-8"
-            onClick={() => (window.location.href = "/api/auth/signin")}>
-            Sign in
-          </Button>
-        </motion.div>
+      <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#111", flexDirection: "column", gap: "24px" }}>
+        <div style={{ width: 52, height: 52, borderRadius: 14, border: "0.5px solid #2a2a2a", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Mail size={22} color="#888" />
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <h1 style={{ fontSize: "20px", fontWeight: 500, color: "#e8e8e8" }}>Mail</h1>
+          <p style={{ fontSize: "13px", color: "#555", marginTop: "6px" }}>Sign in to access your mailbox</p>
+        </div>
+        <button
+          onClick={() => (window.location.href = "/api/auth/signin")}
+          style={{ padding: "8px 24px", borderRadius: "8px", border: "0.5px solid #3a5a8a", background: "#1a2a40", color: "#6fa3d4", fontSize: "13px", cursor: "pointer" }}
+        >
+          Sign in
+        </button>
       </div>
     )
   }
 
-  // ── Main layout ─────────────────────────────────────────────────────────────
+  const userName = session.user.name || extractName(session.user.email || "")
+  const userInitials = getInitials(userName)
+  const selectedContact = selectedEmail ? getEmailContact(selectedEmail, activeFolder) : ""
+  const selectedName = selectedEmail ? extractName(selectedContact) : ""
+  const selectedPalette = selectedEmail ? avatarPalette(selectedName) : AVATAR_PALETTES[0]
+
+  // ── Main layout ──────────────────────────────────────────────────────────────
   return (
-    <TooltipProvider delayDuration={0}>
-      <SidebarProvider>
-        {/* ── Sidebar ── */}
-        <Sidebar
-          collapsible="icon"
-          className="border-r border-border/60"
-        >
-          {/* Logo / mailbox */}
-          <SidebarHeader className="px-3 pt-4 pb-2">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton size="lg" className="hover:bg-card">
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg border border-border bg-card">
-                    <Mail className="size-4 text-foreground/80" />
-                  </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold text-foreground">Mail</span>
-                    <span className="truncate text-xs text-muted-foreground">{mailbox?.mailbox || session.user.email}</span>
-                  </div>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarHeader>
+    <div style={S.root}>
 
-          <SidebarContent className="px-3">
-            {/* Compose */}
-            <div className="mb-2 mt-1">
-              <Button
-                onClick={() => setComposeOpen(true)}
-                className="w-full justify-start gap-2 bg-muted text-foreground hover:bg-muted border border-border/50"
-                size="sm"
-              >
-                <PenSquare className="size-3.5" />
-                <span className="text-sm">Compose</span>
-              </Button>
-            </div>
-
-            {/* Folders */}
-            <SidebarGroup className="p-0">
-              <SidebarGroupLabel className="px-2 text-[10px] uppercase tracking-widest text-muted-foreground/60 mb-1">
-                Folders
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {navItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        isActive={activeFolder === item.folder}
-                        tooltip={item.title}
-                        onClick={() => handleFolderChange(item.folder)}
-                        className={`rounded-md text-sm transition-all ${
-                          activeFolder === item.folder
-                            ? "bg-muted text-foreground"
-                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                        }`}
-                      >
-                        <item.icon className="size-4" />
-                        <span>{item.title}</span>
-                      </SidebarMenuButton>
-                      {item.folder === "inbox" && unreadCount > 0 && (
-                        <SidebarMenuBadge className="bg-muted text-foreground/80 text-[10px]">
-                          {unreadCount}
-                        </SidebarMenuBadge>
-                      )}
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            {/* Labels */}
-            <SidebarGroup className="p-0 mt-4">
-              <SidebarGroupLabel className="px-2 text-[10px] uppercase tracking-widest text-muted-foreground/60 mb-1">
-                Labels
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {labels.map((label) => (
-                    <SidebarMenuItem key={label.title}>
-                      <SidebarMenuButton
-                        tooltip={label.title}
-                        className="text-muted-foreground hover:bg-accent hover:text-accent-foreground text-sm"
-                      >
-                        <span className={`size-1.5 rounded-full ${label.color}`} />
-                        <span>{label.title}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-
-          {/* Footer / user */}
-          <SidebarFooter className="px-3 pb-3 border-t border-border/60 pt-2">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <SidebarMenuButton
-                      size="lg"
-                      className="hover:bg-card data-[state=open]:bg-card"
-                    >
-                      <Avatar className="size-7">
-                        <AvatarImage src={session.user.image || ""} />
-                        <AvatarFallback className="bg-muted text-foreground/80 text-xs">
-                          {getInitials(session.user.name || session.user.email || "U")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate text-xs font-medium text-foreground/90">
-                          {session.user.name || extractName(session.user.email || "")}
-                        </span>
-                        <span className="truncate text-[10px] text-muted-foreground">{session.user.email}</span>
-                      </div>
-                    </SidebarMenuButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-52 bg-card border-border text-foreground/90 " side="top" align="start">
-                    <DropdownMenuLabel className="text-muted-foreground text-xs hover:bg-muted/50 rounded-sm">
-                      <button onClick={() => (window.location.href = "/dashboard/account")}>My Account</button>
-                    </DropdownMenuLabel>
-                    <DropdownMenuLabel className="text-muted-foreground text-xs hover:bg-muted/50 rounded-sm">
-                      <button onClick={() => (window.location.href = "/dashboard")}>Dashboard</button>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-muted" />
-                    <DropdownMenuItem onClick={() => signOut()} className="text-foreground/80 hover:text-foreground focus:bg-muted">
-                      <LogOut className="mr-2 size-3.5" />
-                      Sign out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
-          <SidebarRail />
-        </Sidebar>
-
-        {/* ── Main area ── */}
-        <SidebarInset className="flex flex-col bg-background">
-          {/* Topbar */}
-          <header className="sticky top-0 z-10 flex h-12 items-center gap-3 border-b border-border/60 bg-background/80 px-4 backdrop-blur-sm">
-            <SidebarTrigger className="text-muted-foreground hover:text-foreground/80" />
-            <Separator orientation="vertical" className="h-4 bg-muted" />
-
-            {/* Search */}
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/60" />
-              <Input
-                type="search"
-                placeholder="Search…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-7 pl-8 text-xs bg-card border-border text-foreground/90 placeholder:text-muted-foreground/60 focus-visible:ring-border"
-              />
-            </div>
-
-            <div className="ml-auto flex items-center gap-2">
-              {mailbox && (
-                <span className="text-[11px] text-muted-foreground/60 tabular-nums">
-                  {filteredEmails.length} / {mailbox.count}
-                </span>
-              )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground/80"
-                    onClick={() => fetchEmails(activeFolder)}
-                    disabled={emailsLoading}
-                  >
-                    <RefreshCw className={`size-3.5 ${emailsLoading ? "animate-spin" : ""}`} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-muted text-foreground/90 border-border text-xs">
-                  Refresh
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </header>
-
-          <div className="flex flex-1 overflow-hidden">
-            {/* ── Email list panel ── */}
-            <div className="w-[380px] flex-shrink-0 border-r border-border/60 bg-background">
-              <ScrollArea className="h-[calc(100vh-3rem)]">
-                {emailsLoading && emails.length === 0 ? (
-                  <div className="space-y-px p-3">
-                    {Array.from({ length: 7 }).map((_, i) => (
-                      <div key={i} className="rounded-lg p-3">
-                        <div className="flex gap-3">
-                          <Skeleton className="size-8 rounded-full bg-muted" />
-                          <div className="flex-1 space-y-2">
-                            <Skeleton className="h-3 w-3/4 bg-muted" />
-                            <Skeleton className="h-2.5 w-full bg-border" />
-                            <Skeleton className="h-2.5 w-1/2 bg-muted/30" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : filteredEmails.length === 0 ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex flex-col items-center justify-center p-10 text-center"
-                  >
-                    <Inbox className="mb-3 size-8 text-muted-foreground/40" />
-                    <p className="text-sm text-muted-foreground/60">
-                      {searchQuery ? "No results found" : "No emails here"}
-                    </p>
-                  </motion.div>
-                ) : (
-                  <div className="p-1.5 space-y-0.5">
-                    <AnimatePresence>
-                      {filteredEmails.map((email, index) => {
-                        const isRead     = email.flags?.seen || activeFolder === "sent"
-                        const isSelected = selectedEmail?.uid === email.uid
-                        const contact    = getEmailContact(email, activeFolder)
-                        const name       = extractName(contact)
-                        const palette    = avatarPalette(name)
-
-                        return (
-                          <motion.button
-                            key={email.uid}
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.02, duration: 0.18 }}
-                            onClick={() => setSelectedEmail(email)}
-                            className={`w-full rounded-lg px-3 py-2.5 text-left transition-all duration-150 group overflow-hidden ${
-                              isSelected
-                                ? "bg-muted ring-1 ring-border"
-                                : "hover:bg-card"
-                            }`}
-                          >
-                            <div className="flex items-start gap-2.5 min-w-0">
-                              {/* Unread dot */}
-                              <div className="mt-1 flex items-center justify-center">
-                                {!isRead ? (
-                                  <span className="size-1.5 rounded-full bg-blue-400 flex-shrink-0" />
-                                ) : (
-                                  <span className="size-1.5 flex-shrink-0" />
-                                )}
-                              </div>
-
-                              {/* Avatar */}
-                              <Avatar className="size-7 flex-shrink-0">
-                                <AvatarFallback className={`text-[10px] font-medium ${palette}`}>
-                                  {getInitials(name)}
-                                </AvatarFallback>
-                              </Avatar>
-
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-baseline justify-between gap-1 mb-0.5">
-                                  <span className={`truncate min-w-0 text-xs ${!isRead ? "font-semibold text-foreground" : "text-foreground/80"}`}>
-                                    {activeFolder === "sent" ? `To: ${name}` : name}
-                                  </span>
-                                  <span className="flex-shrink-0 text-[10px] text-muted-foreground/60 pl-1">
-                                    {formatDate(email.date)}
-                                  </span>
-                                </div>
-                                <p className={`truncate text-xs mb-1 ${!isRead ? "text-foreground/90" : "text-muted-foreground"}`}>
-                                  {email.subject || "(no subject)"}
-                                </p>
-                                <p className="line-clamp-1 text-[11px] text-muted-foreground/60">
-                                  {getEmailSnippet(email.body)}
-                                </p>
-                              </div>
-                            </div>
-                          </motion.button>
-                        )
-                      })}
-                    </AnimatePresence>
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
-
-            {/* ── Reading pane ── */}
-            <div className="flex-1 overflow-hidden bg-background">
-              <AnimatePresence mode="wait">
-                {selectedEmail ? (
-                  <motion.div
-                    key={selectedEmail.uid}
-                    initial={{ opacity: 0, x: 12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -12 }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="h-full"
-                  >
-                    <ScrollArea className="h-[calc(100vh-3rem)]">
-                      <div className="mx-auto max-w-3xl p-8">
-
-                        {/* Subject + action bar */}
-                        <div className="mb-6 flex items-start gap-3">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="mt-0.5 h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground/90"
-                                onClick={() => setSelectedEmail(null)}
-                              >
-                                <ArrowLeft className="size-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="bg-muted text-foreground/90 border-border text-xs">
-                              Back
-                            </TooltipContent>
-                          </Tooltip>
-
-                          <div className="flex-1 min-w-0">
-                            <h1 className="text-lg font-semibold leading-snug text-foreground tracking-tight">
-                              {selectedEmail.subject || "(no subject)"}
-                            </h1>
-                          </div>
-
-                          {/* Toolbar */}
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground/90">
-                                  <Star className="size-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent className="bg-muted text-foreground/90 border-border text-xs">Star</TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground/90">
-                                  <ArchiveX className="size-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent className="bg-muted text-foreground/90 border-border text-xs">Archive</TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-400">
-                                  <Trash2 className="size-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent className="bg-muted text-foreground/90 border-border text-xs">Delete</TooltipContent>
-                            </Tooltip>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground/90">
-                                  <MoreHorizontal className="size-3.5" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="bg-card border-border text-foreground/90">
-                                <DropdownMenuItem className="text-xs focus:bg-muted">Mark as unread</DropdownMenuItem>
-                                <DropdownMenuItem className="text-xs focus:bg-muted">Mark as spam</DropdownMenuItem>
-                                <DropdownMenuSeparator className="bg-muted" />
-                                <DropdownMenuItem className="text-xs focus:bg-muted">Print</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-
-                        {/* Sender card */}
-                        <div className="mb-6 flex items-center gap-3 rounded-xl border border-border/60 bg-muted/50 px-4 py-3">
-                          {(() => {
-                            const contact = getEmailContact(selectedEmail, activeFolder)
-                            const name    = extractName(contact)
-                            const palette = avatarPalette(name)
-                            return (
-                              <>
-                                <Avatar className="size-9 flex-shrink-0">
-                                  <AvatarFallback className={`text-xs font-medium ${palette}`}>
-                                    {getInitials(name)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-xs text-muted-foreground">
-                                      {activeFolder === "sent" ? "To:" : "From:"}
-                                    </span>
-                                    <span className="text-sm font-medium text-foreground">{name}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      &lt;{extractEmail(contact)}&gt;
-                                    </span>
-                                  </div>
-                                  <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                                    {formatFullDate(selectedEmail.date)}
-                                  </p>
-                                </div>
-                                {/* Reply actions */}
-                                <div className="flex items-center gap-1.5 flex-shrink-0">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-7 gap-1.5 text-xs border-border bg-muted text-foreground/90 hover:bg-muted hover:text-foreground"
-                                    onClick={() => openReplyCompose(selectedEmail)}
-                                  >
-                                    <Reply className="size-3" />
-                                    Reply
-                                  </Button>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-muted-foreground hover:text-foreground/90"
-                                        onClick={() => openReplyCompose(selectedEmail)}
-                                      >
-                                        <ReplyAll className="size-3.5" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent className="bg-muted text-foreground/90 border-border text-xs">Reply all</TooltipContent>
-                                  </Tooltip>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-muted-foreground hover:text-foreground/90"
-                                        onClick={() => openForwardCompose(selectedEmail)}
-                                      >
-                                        <Forward className="size-3.5" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent className="bg-muted text-foreground/90 border-border text-xs">Forward</TooltipContent>
-                                  </Tooltip>
-                                </div>
-                              </>
-                            )
-                          })()}
-                        </div>
-
-                        <Separator className="mb-6 bg-border" />
-
-                        {/* Email body */}
-                        <motion.div
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.08, duration: 0.2 }}
-                          className="prose prose-sm max-w-none prose-invert prose-zinc"
-                        >
-                          {selectedEmail.body.html && typeof selectedEmail.body.html === "string" ? (
-                            <div
-                              dangerouslySetInnerHTML={{ __html: selectedEmail.body.html }}
-                              className="[&_a]:text-blue-400 [&_a]:underline text-foreground/80"
-                            />
-                          ) : (
-                            <p className="whitespace-pre-wrap leading-relaxed text-foreground/80 text-sm">
-                              {selectedEmail.body.text || "No content"}
-                            </p>
-                          )}
-                        </motion.div>
-                      </div>
-                    </ScrollArea>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="empty"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex h-full flex-col items-center justify-center text-center select-none"
-                  >
-                    <motion.div
-                      initial={{ scale: 0.92 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex flex-col items-center gap-4"
-                    >
-                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-card">
-                        <Mail className="size-7 text-muted-foreground/60" />
-                      </div>
-                      <div>
-                        <h2 className="text-sm font-medium text-foreground/80">No email selected</h2>
-                        <p className="mt-1 text-xs text-muted-foreground/60">Pick one from the list to read it</p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-1 border-border bg-card text-foreground/80 hover:bg-muted hover:text-foreground text-xs"
-                        onClick={() => setComposeOpen(true)}
-                      >
-                        <PenSquare className="mr-1.5 size-3" />
-                        Compose
-                      </Button>
-                    </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+      {/* ════════════════ SIDEBAR ════════════════ */}
+      <aside style={S.sidebar}>
+        {/* User header */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 14px 10px", borderBottom: "0.5px solid #2a2a2a" }}>
+          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 500, color: "#aaa", flexShrink: 0 }}>
+            {userInitials}
           </div>
-        </SidebarInset>
+          <span style={{ flex: 1, fontSize: "12px", fontWeight: 500, color: "#e0e0e0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {userName}
+          </span>
+          <ChevronDown size={13} color="#555" />
+        </div>
 
-        {/* ── Compose dialog ── */}
-        <Dialog open={composeOpen} onOpenChange={handleComposeClose}>
-          <DialogContent className="sm:max-w-[580px] bg-card border-border text-foreground">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <PenSquare className="size-4 text-muted-foreground" />
-                New Message
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
-                Compose and send a new email
-              </DialogDescription>
-            </DialogHeader>
+        {/* Folder nav */}
+        <nav style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+          {FOLDER_NAV.map(({ label, folder, icon }) => {
+            const isActive = activeFolder === folder
+            return (
+              <button
+                key={folder}
+                onClick={() => handleFolderChange(folder)}
+                style={{
+                  display: "flex", alignItems: "center", gap: "10px",
+                  width: "100%", padding: "6px 14px",
+                  background: isActive ? "#222" : "transparent",
+                  border: "none", cursor: "pointer",
+                  color: isActive ? "#e8e8e8" : "#999",
+                  fontSize: "12.5px", textAlign: "left",
+                  transition: "background 0.1s",
+                }}
+                onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#1e1e1e" }}
+                onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent" }}
+              >
+                {icon}
+                <span style={{ flex: 1 }}>{label}</span>
+                {folder === "inbox" && unreadCount > 0 && (
+                  <span style={{ fontSize: "11px", color: "#666" }}>{unreadCount}</span>
+                )}
+              </button>
+            )
+          })}
 
-            <form onSubmit={handleSendEmail} className="space-y-3 mt-1">
-              {/* To */}
-              <div className="space-y-1">
-                <Label htmlFor="to" className="text-xs text-muted-foreground">To</Label>
-                <Input
-                  id="to"
-                  type="email"
-                  placeholder="recipient@example.com"
-                  value={composeTo}
-                  onChange={(e) => setComposeTo(e.target.value)}
-                  disabled={sending}
-                  required
-                  className="h-8 text-xs bg-muted border-border text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-ring"
-                />
-              </div>
+          <div style={{ padding: "10px 14px 4px", fontSize: "10px", color: "#444", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            Categories
+          </div>
 
-              {/* Subject */}
-              <div className="space-y-1">
-                <Label htmlFor="subject" className="text-xs text-muted-foreground">Subject</Label>
-                <Input
-                  id="subject"
-                  type="text"
-                  placeholder="Email subject"
-                  value={composeSubject}
-                  onChange={(e) => setComposeSubject(e.target.value)}
-                  disabled={sending}
-                  className="h-8 text-xs bg-muted border-border text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-ring"
-                />
+          {CATEGORY_NAV.map(({ label, icon, count }) => (
+            <button
+              key={label}
+              style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "6px 14px", background: "transparent", border: "none", cursor: "pointer", color: "#999", fontSize: "12.5px", textAlign: "left" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#1e1e1e" }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent" }}
+            >
+              {icon}
+              <span style={{ flex: 1 }}>{label}</span>
+              <span style={{ fontSize: "11px", color: "#666" }}>{count}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Sign out */}
+        <div style={{ borderTop: "0.5px solid #2a2a2a", padding: "10px 14px" }}>
+          <button
+            onClick={() => signOut()}
+            style={{ display: "flex", alignItems: "center", gap: "8px", background: "transparent", border: "none", cursor: "pointer", color: "#666", fontSize: "12px", width: "100%" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#ccc" }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#666" }}
+          >
+            <LogOut size={13} />
+            Sign out
+          </button>
+        </div>
+      </aside>
+
+      {/* ════════════════ EMAIL LIST ════════════════ */}
+      <section style={S.listPanel}>
+        {/* Header */}
+        <div style={{ padding: "12px 14px 0", borderBottom: "0.5px solid #2a2a2a", flexShrink: 0 }}>
+          <div style={{ fontSize: "16px", fontWeight: 600, color: "#e8e8e8", marginBottom: "10px", textTransform: "capitalize" }}>
+            {activeFolder}
+          </div>
+          {/* Tabs */}
+          <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
+            {(["all", "unread"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  padding: "3px 11px", borderRadius: "14px",
+                  border: "0.5px solid #333",
+                  background: activeTab === tab ? "#2a2a2a" : "transparent",
+                  color: activeTab === tab ? "#e8e8e8" : "#777",
+                  fontSize: "11px", cursor: "pointer", fontFamily: "inherit",
+                  transition: "all 0.1s",
+                }}
+              >
+                {tab === "all" ? "All mail" : "Unread"}
+              </button>
+            ))}
+          </div>
+          {/* Search */}
+          <div style={{ display: "flex", alignItems: "center", gap: "7px", background: "#1e1e1e", border: "0.5px solid #2a2a2a", borderRadius: "6px", padding: "5px 10px", marginBottom: "10px" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input
+              type="search"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ background: "none", border: "none", outline: "none", color: "#ccc", fontSize: "12px", width: "100%", fontFamily: "inherit" }}
+            />
+          </div>
+        </div>
+
+        {/* Email list */}
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {emailsLoading ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px", color: "#444" }}>
+              <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+            </div>
+          ) : filteredEmails.length === 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "40px", color: "#444", gap: "8px" }}>
+              <Inbox size={24} />
+              <span style={{ fontSize: "12px" }}>{searchQuery ? "No results" : "No emails here"}</span>
+            </div>
+          ) : (
+            filteredEmails.map((email) => {
+              const isRead     = email.flags?.seen || activeFolder === "sent"
+              const isSelected = selectedEmail?.uid === email.uid
+              const contact    = getEmailContact(email, activeFolder)
+              const name       = extractName(contact)
+              const palette    = avatarPalette(name)
+
+              // Naive tag extraction from subject keywords — replace with real tag data if available
+              const tagWords = [email.subject, email.body.text].join(" ").toLowerCase()
+              const tags: string[] = []
+              if (tagWords.includes("meeting"))  tags.push("meeting")
+              if (tagWords.includes("budget"))   tags.push("budget")
+              if (/work|project|update|report|team|announce/i.test(tagWords)) tags.push("work")
+              if (/personal|weekend|plan|hike/i.test(tagWords)) tags.push("personal")
+              if (/important|urgent|crucial/i.test(tagWords))   tags.push("important")
+
+              return (
+                <button
+                  key={email.uid}
+                  onClick={() => setSelectedEmail(email)}
+                  style={{
+                    display: "block", width: "100%", padding: "11px 14px",
+                    background: isSelected ? "#1e2030" : "transparent",
+                    borderLeft: isSelected ? "2px solid #4a6fa5" : "2px solid transparent",
+                    borderRight: "none", borderTop: "none",
+                    borderBottom: "0.5px solid #1e1e1e",
+                    cursor: "pointer", textAlign: "left",
+                    transition: "background 0.1s",
+                  }}
+                  onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "#1a1a1a" }}
+                  onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "transparent" }}
+                >
+                  {/* Row 1: name + date */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "3px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0 }}>
+                      {!isRead && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4a7abf", flexShrink: 0, display: "inline-block" }} />}
+                      <span style={{ fontSize: "12.5px", fontWeight: isRead ? 400 : 600, color: "#e0e0e0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "150px" }}>
+                        {activeFolder === "sent" ? `To: ${name}` : name}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: "10.5px", color: "#555", flexShrink: 0, paddingLeft: "6px" }}>
+                      {formatDate(email.date)}
+                    </span>
+                  </div>
+                  {/* Row 2: subject */}
+                  <div style={{ fontSize: "12px", fontWeight: 500, color: "#aaa", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: "3px" }}>
+                    {email.subject || "(no subject)"}
+                  </div>
+                  {/* Row 3: snippet */}
+                  <div style={{ fontSize: "11px", color: "#555", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: tags.length ? "6px" : 0 }}>
+                    {getEmailSnippet(email.body)}
+                  </div>
+                  {/* Tags */}
+                  {tags.length > 0 && (
+                    <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                      {tags.slice(0, 3).map((tag) => (
+                        <span key={tag} style={{ padding: "2px 7px", borderRadius: "10px", fontSize: "10px", border: "0.5px solid", ...tagStyle(tag) }}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </button>
+              )
+            })
+          )}
+        </div>
+      </section>
+
+      {/* ════════════════ READING PANE ════════════════ */}
+      <main style={S.readingPane}>
+        {/* Toolbar */}
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "8px 14px", borderBottom: "0.5px solid #2a2a2a", background: "#161616", flexShrink: 0 }}>
+          {[
+            { icon: <Archive size={14} />, title: "Archive" },
+            { icon: <AlertTriangle size={14} />, title: "Junk" },
+            { icon: <Trash2 size={14} />, title: "Delete" },
+          ].map(({ icon, title }) => (
+            <ToolbarBtn key={title} title={title}>{icon}</ToolbarBtn>
+          ))}
+          <div style={{ flex: 1 }} />
+          <ToolbarBtn title="Snooze"><Clock size={14} /></ToolbarBtn>
+          <div style={{ flex: 1 }} />
+          {selectedEmail && (
+            <>
+              <ToolbarBtn title="Reply" onClick={() => replyRef.current?.focus()}><CornerUpLeft size={14} /></ToolbarBtn>
+              <ToolbarBtn title="Reply all" onClick={() => replyRef.current?.focus()}><CornerUpLeft size={14} /></ToolbarBtn>
+              <ToolbarBtn title="Forward" onClick={() => openForwardCompose(selectedEmail)}><CornerUpRight size={14} /></ToolbarBtn>
+            </>
+          )}
+          <ToolbarBtn title="More"><MoreVertical size={14} /></ToolbarBtn>
+        </div>
+
+        {selectedEmail ? (
+          <>
+            {/* Email content */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px" }}>
+              {/* Sender card */}
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "20px" }}>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: selectedPalette.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 500, color: selectedPalette.text, flexShrink: 0 }}>
+                  {getInitials(selectedName)}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "#e8e8e8" }}>{selectedName}</div>
+                  <div style={{ fontSize: "12px", color: "#777", marginTop: "2px" }}>{selectedEmail.subject || "(no subject)"}</div>
+                  <div style={{ fontSize: "11px", color: "#555", marginTop: "2px" }}>
+                    Reply-To: {extractEmail(selectedContact)}
+                  </div>
+                </div>
+                <div style={{ fontSize: "11px", color: "#555", flexShrink: 0 }}>
+                  {formatFullDate(selectedEmail.date)}
+                </div>
               </div>
 
               {/* Body */}
-              <div className="space-y-1">
-                <Label htmlFor="body" className="text-xs text-muted-foreground">Message</Label>
-                <Textarea
-                  id="body"
-                  placeholder="Write your message…"
-                  value={composeBody}
-                  onChange={(e) => setComposeBody(e.target.value)}
-                  disabled={sending}
-                  rows={10}
-                  className="resize-none text-xs bg-muted border-border text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-ring"
-                />
+              <div style={{ borderTop: "0.5px solid #2a2a2a", paddingTop: "18px", fontSize: "13px", color: "#c0c0c0", lineHeight: 1.75 }}>
+                {selectedEmail.body.html && typeof selectedEmail.body.html === "string" ? (
+                  <div
+                    dangerouslySetInnerHTML={{ __html: selectedEmail.body.html }}
+                    style={{ color: "#c0c0c0" }}
+                  />
+                ) : (
+                  <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", margin: 0 }}>
+                    {selectedEmail.body.text || "No content"}
+                  </pre>
+                )}
               </div>
+            </div>
 
-              {/* Error */}
-              {sendError && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="rounded-lg border border-red-900/40 bg-red-900/20 px-3 py-2 text-xs text-red-400"
-                >
-                  {sendError}
-                </motion.div>
-              )}
+            {/* Inline reply box */}
+            <div style={{ borderTop: "0.5px solid #2a2a2a", padding: "12px 16px", background: "#161616", flexShrink: 0 }}>
+              <form onSubmit={handleSendReply}>
+                <div style={{ background: "#1e1e1e", border: "0.5px solid #2a2a2a", borderRadius: "8px", padding: "10px 12px" }}>
+                  <textarea
+                    ref={replyRef}
+                    value={replyBody}
+                    onChange={(e) => setReplyBody(e.target.value)}
+                    placeholder={`Reply ${selectedName}…`}
+                    disabled={sending}
+                    rows={3}
+                    style={{
+                      width: "100%", background: "none", border: "none", outline: "none",
+                      color: replyBody ? "#e0e0e0" : "#555",
+                      fontSize: "12px", resize: "none", fontFamily: "inherit",
+                      lineHeight: 1.6,
+                    }}
+                  />
 
-              {/* Actions */}
-              <div className="flex justify-end gap-2 pt-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleComposeClose}
-                  disabled={sending}
-                  className="text-xs text-muted-foreground hover:text-foreground/90 hover:bg-muted"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={sending}
-                  className="text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  {sending ? (
-                    <>
-                      <Loader2 className="mr-1.5 size-3 animate-spin" />
-                      Sending…
-                    </>
-                  ) : (
-                    <>
-                      <Send className="mr-1.5 size-3" />
-                      Send
-                    </>
+                  {sendError && (
+                    <div style={{ fontSize: "11px", color: "#c46060", marginTop: "4px", padding: "4px 8px", background: "#2a1414", borderRadius: "4px", border: "0.5px solid #5a2a2a" }}>
+                      {sendError}
+                    </div>
                   )}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </SidebarProvider>
-    </TooltipProvider>
+                  {sendSuccess && (
+                    <div style={{ fontSize: "11px", color: "#5abf8a", marginTop: "4px" }}>
+                      Message sent.
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "8px" }}>
+                    {/* Mute toggle */}
+                    <label style={{ display: "flex", alignItems: "center", gap: "7px", cursor: "pointer", color: "#555", fontSize: "11px", userSelect: "none" }}>
+                      <div
+                        onClick={() => setMuteThread(!muteThread)}
+                        style={{
+                          width: "28px", height: "15px", borderRadius: "8px",
+                          background: muteThread ? "#3a5a8a" : "#2a2a2a",
+                          border: "0.5px solid #333", position: "relative",
+                          cursor: "pointer", transition: "background 0.2s",
+                        }}
+                      >
+                        <div style={{
+                          width: "11px", height: "11px", borderRadius: "50%",
+                          background: muteThread ? "#6fa3d4" : "#555",
+                          position: "absolute", top: "1.5px",
+                          left: muteThread ? "14px" : "2px",
+                          transition: "left 0.2s, background 0.2s",
+                        }} />
+                      </div>
+                      Mute this thread
+                    </label>
+
+                    <button
+                      type="submit"
+                      disabled={sending || !replyBody.trim()}
+                      style={{
+                        padding: "5px 16px", borderRadius: "6px",
+                        border: "0.5px solid #3a5a8a",
+                        background: sending || !replyBody.trim() ? "#111" : "#1a2a40",
+                        color: sending || !replyBody.trim() ? "#444" : "#6fa3d4",
+                        fontSize: "12px", cursor: sending || !replyBody.trim() ? "not-allowed" : "pointer",
+                        fontFamily: "inherit", display: "flex", alignItems: "center", gap: "5px",
+                        transition: "all 0.1s",
+                      }}
+                    >
+                      {sending ? <><Loader2 size={11} style={{ animation: "spin 1s linear infinite" }} /> Sending…</> : "Send"}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </>
+        ) : (
+          /* Empty state */
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#444", gap: "10px" }}>
+            <Mail size={28} />
+            <div style={{ fontSize: "13px" }}>Select an email to read</div>
+          </div>
+        )}
+      </main>
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
+}
+
+// ─── Small toolbar button ─────────────────────────────────────────────────────
+
+function ToolbarBtn({ children, title, onClick }: { children: React.ReactNode; title: string; onClick?: () => void }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: "28px", height: "28px", borderRadius: "6px",
+        border: "0.5px solid #2a2a2a",
+        background: hovered ? "#2a2a2a" : "#1e1e1e",
+        color: hovered ? "#ccc" : "#777",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        cursor: "pointer", transition: "all 0.1s", flexShrink: 0,
+      }}
+    >
+      {children}
+    </button>
   )
 }

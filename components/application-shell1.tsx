@@ -22,7 +22,10 @@ const DASHBOARD_TITLES: Array<{ path: string; title: string }> = [
   { path: "/dashboard/server-settings", title: "Server settings" },
   { path: "/dashboard/server-registry", title: "Server Registry" },
   { path: "/dashboard/lxc-registry", title: "LXC Registry" },
+  { path: "/dashboard/certs", title: "SSL Certificates" },
+  { path: "/dashboard/dns", title: "DNS Records" },
   { path: "/dashboard/users", title: "Site Users" },
+  { path: "/dashboard/proxy", title: "Proxy" },
   { path: "/dashboard", title: "Dashboard" },
 ];
 
