@@ -6,6 +6,85 @@ import { authConfig } from "@/lib/auth.config";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 
+const LOG_PREFIX = "[auth.ts]";
+function log(msg: string, data?: unknown) {
+  console.log(`${LOG_PREFIX} ${msg}`, data !== undefined ? JSON.stringify(data, null, 2) : "");
+}
+function logError(msg: string, err: unknown) {
+  console.error(`${LOG_PREFIX} ERROR — ${msg}`, err);
+}
+
+// ─── Shared notification helper ───────────────────────────────────────────────
+
+async function sendLoginNotification(userId: string, provider: "credentials" | "entra") {
+  log(`sendLoginNotification called — userId: ${userId}, provider: ${provider}`);
+  try {
+    const userDevices = await prisma.deviceToken.findMany({
+      where: { userId },
+    });
+
+    log(`Device tokens found for user ${userId}: ${userDevices.length}`, {
+      tokens: userDevices.map((d) => ({ id: d.id, preview: d.token.slice(0, 20) + "..." })),
+    });
+
+    if (userDevices.length === 0) {
+      log(`No device tokens for user ${userId} — skipping push notification`);
+      return;
+    }
+
+    log("Importing Firebase Admin SDK...");
+    let admin: Awaited<typeof import("@/lib/firebaseAdmin")>["default"];
+    try {
+      admin = (await import("@/lib/firebaseAdmin")).default;
+      log("Firebase Admin SDK imported successfully");
+    } catch (importErr) {
+      logError("Failed to import Firebase Admin SDK", importErr);
+      return;
+    }
+    const user = await prisma.appUsers.findUnique({ where: { id: userId } });
+    if (!user) {
+      log(`User not found for ID ${userId} — cannot send notification`);
+      return;
+    }
+    const providerLabel = provider === "entra" ? "Microsoft Entra" : "username and password";
+    const payload = {
+      notification: {
+        title: "New Login",
+        body: `Your account ${user.username} was just signed in via ${providerLabel}.`,
+      },
+      android: {
+        priority: "high" as const ,
+      },
+    };
+    log("FCM payload:", payload);
+
+    const results = await Promise.allSettled(
+      userDevices.map(async (device) => {
+        log(`Sending to device ${device.id} (${device.token.slice(0, 20)}...)`);
+        const messageId = await admin.messaging().send({
+          token: device.token,
+          ...payload,
+        });
+        log(`Success — device ${device.id}, messageId: ${messageId}`);
+        return messageId;
+      }),
+    );
+
+    const succeeded = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results.filter((r) => r.status === "rejected").length;
+    log(`Notification dispatch complete — ${succeeded} succeeded, ${failed} failed`);
+    results.forEach((r, i) => {
+      if (r.status === "rejected") {
+        logError(`Device index ${i} rejected`, r.reason);
+      }
+    });
+  } catch (err) {
+    logError(`sendLoginNotification threw unexpectedly for user ${userId}`, err);
+  }
+}
+
+// ─── Entra profile sync ────────────────────────────────────────────────────────
+
 function normalizeNullableString(value: unknown): string | null | undefined {
   if (value === undefined) return undefined;
   if (value === null) return null;
@@ -77,6 +156,8 @@ async function syncEntraUser(profile: Record<string, unknown> | undefined) {
   });
 }
 
+// ─── NextAuth config ───────────────────────────────────────────────────────────
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   providers: [
@@ -87,6 +168,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        log("Credentials authorize() called");
         const username =
           typeof credentials?.username === "string"
             ? credentials.username.trim().toLowerCase()
@@ -94,14 +176,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const password =
           typeof credentials?.password === "string" ? credentials.password : "";
 
-        if (!username || !password) return null;
+        log(`Attempting credentials login for username: "${username}"`);
 
-        const appUser = await prisma.appUsers.findUnique({
-          where: { username },
-        });
+        if (!username || !password) {
+          log("Missing username or password — returning null");
+          return null;
+        }
+
+        const appUser = await prisma.appUsers.findUnique({ where: { username } });
+        log(`DB lookup result: ${appUser ? `found id=${appUser.id}, isActive=${appUser.isActive}` : "not found"}`);
 
         if (!appUser || !appUser.isActive) return null;
-        if (!verifyPassword(password, appUser.passwordHash)) return null;
+        if (!verifyPassword(password, appUser.passwordHash)) {
+          log(`Password verification failed for user ${appUser.id}`);
+          return null;
+        }
+
+        log(`Credentials login successful for user ${appUser.id} — firing notification`);
+        // Don't await — don't block the login response
+        sendLoginNotification(appUser.id, "credentials").catch((err) =>
+          logError("Background notification failed (credentials)", err),
+        );
 
         return {
           id: appUser.id,
@@ -119,7 +214,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, account, profile, user }) {
       if (account?.provider === "microsoft-entra-id") {
+        log(`JWT callback — Entra login, syncing profile`);
         const syncedUser = await syncEntraUser(profile as Record<string, unknown> | undefined);
+        log(`Entra sync result: ${syncedUser ? `id=${syncedUser.id}` : "null"}`);
 
         if (syncedUser) {
           token.sub = syncedUser.id;
@@ -131,15 +228,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.avatarUrl = syncedUser.avatarUrl;
           token.isActive = syncedUser.isActive;
           token.isEntraUser = syncedUser.isEntraUser;
+
+          log(`Entra login complete for user ${syncedUser.id} — firing notification`);
+          // Don't await — don't block the login response
+          sendLoginNotification(syncedUser.id, "entra").catch((err) =>
+            logError("Background notification failed (entra)", err),
+          );
         }
 
         return token;
       }
 
       if (user?.id) {
-        const appUser = await prisma.appUsers.findUnique({
-          where: { id: user.id },
-        });
+        log(`JWT callback — credentials login, enriching token for user ${user.id}`);
+        const appUser = await prisma.appUsers.findUnique({ where: { id: user.id } });
 
         if (appUser) {
           token.sub = appUser.id;
