@@ -47,6 +47,21 @@ export default async function AccountPage() {
   const userId = sessionUser.id?.trim();
   const email = sessionUser.email?.trim().toLowerCase();
   const username = sessionUser.name?.trim().toLowerCase();
+
+  const device = await prisma.deviceToken.findFirst({
+    where: {
+      userId: userId,
+    },
+    select: {
+      platform: true,
+      id: true,
+      deviceVersion: true,
+      deviceName: true,
+      deviceModelName: true,
+      deviceBrand: true,
+     
+    },
+  });
   
 
   const user = await prisma.appUsers.findFirst({
@@ -236,18 +251,35 @@ export default async function AccountPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Security notes</CardTitle>
-              <CardDescription>What this account is tied to in the authentication layer.</CardDescription>
+              <CardTitle>Registered Devices</CardTitle>
+              <CardDescription>These are all the devices registered to your account.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p>
-                {user?.isEntraUser
-                  ? "This account is marked as an Entra user and its identity can be reconciled with Microsoft sign-in data."
-                  : "This is a local application account authenticated with the stored password hash."}
-              </p>
-              <p>
-                Password hashes are not exposed here. If the password needs to be changed, use the dedicated reset flow or admin tools.
-              </p>
+            <CardContent className="space-y-4 text-sm">
+            <DetailRow
+              label="Device Platform"
+              value={device ? device.platform : "No database match yet"}
+            />
+            <DetailRow
+              label="Device ID"
+              value={device ? device.id : "No database match yet"}
+            />
+              <DetailRow
+              label="Device Name"
+              value={device ? device.deviceName ?? "Not set" : "No database match yet"}
+            />
+              <DetailRow
+              label="Device Model"
+              value={device ? device.deviceModelName ?? "Not set" : "No database match yet"}
+            />
+              <DetailRow
+              label="Device Brand"
+              value={device ? device.deviceBrand ?? "Not set" : "No database match yet"}
+            />
+            <DetailRow
+              label="Device Version"
+              value={device ? device.deviceVersion ?? "Not set" : "No database match yet"}
+            />
+  
             </CardContent>
           </Card>
         </div>

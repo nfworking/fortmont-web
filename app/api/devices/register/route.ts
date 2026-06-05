@@ -1,30 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getToken } from "next-auth/jwt";
+
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Auth
-    const session = await auth();
+    let sessionUser = (await auth())?.user as { id?: string; role?: string } | undefined;
+    
+      if (!sessionUser ) {
+        const token = await getToken({ 
+          req: request, 
+          secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET 
+        });
+        
+        if (token) {
+          sessionUser = {
+            id: token.sub, // NextAuth maps the user ID to the 'sub' field in JWTs
+           
+          };
+        }
+      }
+    
+      if (!sessionUser || !sessionUser.id) {
+        return createError("Unauthorized", 401);
+      }
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+    const userId = sessionUser.id;
 
-    const userId = session.user.id;
-
-    // 2. Request body
     const body = await request.json();
 
     const {
       token: fcmToken,
       platform,
+      deviceVersion,
+      deviceName,
+      deviceModelName,
+      deviceBrand,
     } = body as {
       token?: string;
       platform?: string;
+      deviceVersion?: string;
+      deviceName?: string;
+      deviceModelName?: string;
+      deviceBrand?: string;
     };
 
     if (!fcmToken || !platform) {
@@ -34,7 +54,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Save/update device
     const device = await prisma.deviceToken.upsert({
       where: {
         token: fcmToken,
@@ -42,12 +61,23 @@ export async function POST(request: NextRequest) {
       update: {
         userId,
         platform: platform.toLowerCase(),
+
+        deviceVersion,
+        deviceName,
+        deviceModelName,
+        deviceBrand,
+
         updatedAt: new Date(),
       },
       create: {
         token: fcmToken,
         userId,
         platform: platform.toLowerCase(),
+
+        deviceVersion,
+        deviceName,
+        deviceModelName,
+        deviceBrand,
       },
     });
 
@@ -63,4 +93,8 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+function createError(message: string, status: number) {
+  return NextResponse.json({ error: message }, { status });
 }

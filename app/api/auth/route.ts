@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getToken } from "next-auth/jwt";
 
 export const runtime = "nodejs";
 
@@ -23,18 +24,24 @@ function createError(message: string, status: number) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const session = await auth();
+  // 2. Try fetching the cookie session first, fall back to parsing the Bearer Token header
+  let sessionUser = (await auth())?.user as { id?: string; role?: string } | undefined;
 
-  if (!session?.user) {
-    return createError("Unauthorized", 401);
+  if (!sessionUser) {
+    const token = await getToken({ 
+      req: request, 
+      secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET 
+    });
+    
+    if (token) {
+      sessionUser = {
+        id: token.sub, // NextAuth maps the user ID to the 'sub' field in JWTs
+        role: (token.role as string) || "user",
+      };
+    }
   }
 
-  const sessionUser = session.user as {
-    id?: string;
-    role?: string;
-  };
-
-  if (!sessionUser.id) {
+  if (!sessionUser || !sessionUser.id) {
     return createError("Unauthorized", 401);
   }
 

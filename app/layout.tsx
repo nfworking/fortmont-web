@@ -17,8 +17,7 @@ const geistMono = Geist_Mono({
 
 
 export const metadata: Metadata = {
-  title: "Fortmont Webmail Creation",
-};
+  title: "Fortmont  "};
 
 export default async function RootLayout({
   children,
