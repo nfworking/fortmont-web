@@ -24,7 +24,7 @@ function formatDate(value: Date) {
   }).format(value);
 }
 
-function getInitials(value: string | null | undefined) {
+function getInitials(value: string | undefined) {
   return (value ?? "")
     .split(" ")
     .filter(Boolean)
@@ -42,10 +42,10 @@ export default async function AccountPage() {
   }
 
   const sessionUser = session.user as {
-    id?: string | null;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
+    id?: string ;
+    name?: string ;
+    email?: string ;
+    image?: string ;
   };
 
   const userId = sessionUser.id?.trim();
@@ -97,29 +97,33 @@ export default async function AccountPage() {
     exit: { opacity: 0, y: -20 },
   };
 
-  return (
-    <MotionWrapper variants={pageVariants} transition={{ duration: 0.35, ease: "easeOut" }}>
-        <AccountHeader user={user} sessionUser={sessionUser} initials={initials} />
-        <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-            <TabsTrigger value="devices">Devices</TabsTrigger>
-            <TabsTrigger value="mailboxes">Mailboxes</TabsTrigger>
-          </TabsList>
-          <TabsContent value="profile" className="mt-4">
-            <ProfileTab user={user} formatDate={formatDate} />
-          </TabsContent>
-          <TabsContent value="settings" className="mt-4">
-            <SettingsTab user={user} />
-          </TabsContent>
-          <TabsContent value="devices" className="mt-4">
-            <DevicesTab device={device} />
-          </TabsContent>
-          <TabsContent value="mailboxes" className="mt-4">
-            <MailboxesTab mailboxes={user?.mailboxes ?? []} />
-          </TabsContent>
-        </Tabs>
-      </MotionWrapper>
-  );
+if (!user) {
+  return <div>User not found</div>;
+}
+
+return (
+  <MotionWrapper variants={pageVariants} transition={{ duration: 0.35, ease: "easeOut" }}>
+    <AccountHeader user={user} sessionUser={sessionUser} initials={initials} />
+    <Tabs defaultValue="profile" className="w-full">
+      <TabsList className="grid w-full grid-cols-4">
+        <TabsTrigger value="profile">Profile</TabsTrigger>
+        <TabsTrigger value="settings">Settings</TabsTrigger>
+        <TabsTrigger value="devices">Devices</TabsTrigger>
+        <TabsTrigger value="mailboxes">Mailboxes</TabsTrigger>
+      </TabsList>
+      <TabsContent value="profile" className="mt-4">
+        <ProfileTab user={user} formatDate={formatDate} />
+      </TabsContent>
+      <TabsContent value="settings" className="mt-4">
+        <SettingsTab user={user} />
+      </TabsContent>
+      <TabsContent value="devices" className="mt-4">
+        <DevicesTab device={device} />
+      </TabsContent>
+      <TabsContent value="mailboxes" className="mt-4">
+        <MailboxesTab mailboxes={user?.mailboxes ?? []} />
+      </TabsContent>
+    </Tabs>
+  </MotionWrapper>
+);
 }

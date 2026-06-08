@@ -10,13 +10,13 @@ interface AccountHeaderProps {
     email?: string | null;
     isActive?: boolean;
     role?: string | null;
-    isEntraUser?: boolean;
+    isEntraUser?: boolean | null;
     createdAt?: Date;
     updatedAt?: Date;
-  } | null;
+  };
   sessionUser: {
-    name?: string | null;
-    email?: string | null;
+    name?: string;
+    email?: string;
   };
   initials: string;
 }

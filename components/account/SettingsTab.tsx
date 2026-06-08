@@ -33,4 +33,4 @@ export default function SettingsTab({ user }: SettingsTabProps) {
 }
 
 // Note: AccountSettingsForm is imported from the existing file
-import AccountSettingsForm from "@/components/account-settings-form";
+import {AccountSettingsForm} from "@/components/account-settings-form";

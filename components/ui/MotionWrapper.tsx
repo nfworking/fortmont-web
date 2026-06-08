@@ -1,14 +1,13 @@
+// components/ui/MotionWrapper.tsx
 "use client";
 
-import { motion, MotionProps } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 import React from "react";
 
-type MotionWrapperProps = MotionProps & {
+interface MotionWrapperProps extends HTMLMotionProps<"div"> {
   children: React.ReactNode;
-};
+}
 
-const MotionWrapper: React.FC<MotionWrapperProps> = ({ children, ...props }) => {
-  return <motion.div {...props}>{children}</motion.div>;
-};
-
-export default MotionWrapper;
+export default function MotionWrapper({ children, ...rest }: MotionWrapperProps) {
+  return <motion.div {...rest}>{children}</motion.div>;
+}
