@@ -2,8 +2,10 @@
 
 import * as React from "react"
 import { Email, FolderType } from "./mail"
-import { getEmailContact, extractName, avatarPalette, tagStyle, formatDate, getEmailSnippet } from "./formatters"
-import { S } from "./styles"
+import { getEmailContact, extractName, formatDate, getEmailSnippet } from "./formatters"
+import { cn } from "@/lib/utils"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { Inbox, Loader2 } from "lucide-react"
 
 interface EmailListProps {
@@ -30,50 +32,53 @@ export function EmailList({
   setSelectedEmail,
 }: EmailListProps) {
   return (
-    <section style={S.listPanel}>
-      <div style={{ padding: "12px 14px 0", borderBottom: "0.5px solid #2a2a2a", flexShrink: 0 }}>
-        <div style={{ fontSize: "16px", fontWeight: 600, color: "#e8e8e8", marginBottom: "10px", textTransform: "capitalize" }}>
+    <section className="w-80 flex-shrink-0 border-r border-border bg-background flex flex-col h-full overflow-hidden">
+      <div className="p-4 border-b border-border/60 flex-shrink-0 flex flex-col gap-3">
+        <h2 className="text-base font-bold text-foreground capitalize leading-none tracking-tight">
           {activeFolder}
-        </div>
-        <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
+        </h2>
+        
+        <div className="flex gap-1">
           {(["all", "unread"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              style={{
-                padding: "3px 11px", borderRadius: "14px",
-                border: "0.5px solid #333",
-                background: activeTab === tab ? "#2a2a2a" : "transparent",
-                color: activeTab === tab ? "#e8e8e8" : "#777",
-                fontSize: "11px", cursor: "pointer", fontFamily: "inherit",
-                transition: "all 0.1s",
-              }}
+              className={cn(
+                "px-2.5 py-1 rounded-full text-[10px] font-medium transition-colors cursor-pointer border",
+                activeTab === tab
+                  ? "bg-secondary text-secondary-foreground border-border"
+                  : "bg-transparent text-muted-foreground border-transparent hover:text-foreground"
+              )}
             >
               {tab === "all" ? "All mail" : "Unread"}
             </button>
           ))}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "7px", background: "#1e1e1e", border: "0.5px solid #2a2a2a", borderRadius: "6px", padding: "5px 10px", marginBottom: "10px" }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input
+
+        <div className="relative flex items-center">
+          <svg className="absolute left-2.5 size-3.5 text-muted-foreground/60" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <Input
             type="search"
-            placeholder="Search"
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ background: "none", border: "none", outline: "none", color: "#ccc", fontSize: "12px", width: "100%", fontFamily: "inherit" }}
+            className="pl-8 h-8 text-xs bg-muted/20 hover:bg-muted/40 border-border/60 focus-visible:bg-background focus-visible:ring-2"
           />
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto" }}>
+      <div className="flex-1 overflow-y-auto divide-y divide-border/30">
         {emailsLoading ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px", color: "#444" }}>
-            <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+          <div className="flex items-center justify-center p-8 text-muted-foreground">
+            <Loader2 className="size-5 animate-spin" />
           </div>
         ) : filteredEmails.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "40px", color: "#444", gap: "8px" }}>
-            <Inbox size={24} />
-            <span style={{ fontSize: "12px" }}>{searchQuery ? "No results" : "No emails here"}</span>
+          <div className="flex flex-col items-center justify-center p-12 text-muted-foreground/80 gap-2">
+            <Inbox className="size-6 text-muted-foreground/50" />
+            <span className="text-xs">{searchQuery ? "No results found" : "No emails in this folder"}</span>
           </div>
         ) : (
           filteredEmails.map((email) => {
@@ -94,41 +99,57 @@ export function EmailList({
               <button
                 key={email.uid}
                 onClick={() => setSelectedEmail(email)}
-                style={{
-                  display: "block", width: "100%", padding: "11px 14px",
-                  background: isSelected ? "#1e2030" : "transparent",
-                  borderLeft: isSelected ? "2px solid #4a6fa5" : "2px solid transparent",
-                  borderRight: "none", borderTop: "none",
-                  borderBottom: "0.5px solid #1e1e1e",
-                  cursor: "pointer", textAlign: "left",
-                  transition: "background 0.1s",
-                }}
-                onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "#1a1a1a" }}
-                onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "transparent" }}
+                className={cn(
+                  "w-full text-left p-4 transition-colors flex flex-col gap-1.5 cursor-pointer relative",
+                  isSelected
+                    ? "bg-secondary/70 text-secondary-foreground"
+                    : "hover:bg-muted/40 text-foreground bg-transparent"
+                )}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "3px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0 }}>
-                    {!isRead && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4a7abf", flexShrink: 0, display: "inline-block" }} />}
-                    <span style={{ fontSize: "12.5px", fontWeight: isRead ? 400 : 600, color: "#e0e0e0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "150px" }}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {!isRead && <span className="size-2 rounded-full bg-blue-500 shrink-0" />}
+                    <span className={cn(
+                      "text-xs truncate",
+                      isRead ? "font-normal text-foreground/80" : "font-semibold text-foreground"
+                    )}>
                       {activeFolder === "sent" ? `To: ${name}` : name}
                     </span>
                   </div>
-                  <span style={{ fontSize: "10.5px", color: "#555", flexShrink: 0, paddingLeft: "6px" }}>
+                  <span className="text-[10px] text-muted-foreground/80 whitespace-nowrap shrink-0">
                     {formatDate(email.date)}
                   </span>
                 </div>
-                <div style={{ fontSize: "12px", fontWeight: 500, color: "#aaa", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: "3px" }}>
+                
+                <h4 className={cn(
+                  "text-xs truncate leading-none",
+                  isRead ? "font-normal text-muted-foreground" : "font-semibold text-foreground/90"
+                )}>
                   {email.subject || "(no subject)"}
-                </div>
-                <div style={{ fontSize: "11px", color: "#555", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: tags.length ? "6px" : 0 }}>
+                </h4>
+                
+                <p className="text-[11px] text-muted-foreground/85 line-clamp-2 leading-relaxed">
                   {getEmailSnippet(email.body)}
-                </div>
+                </p>
+                
                 {tags.length > 0 && (
-                  <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                  <div className="flex items-center gap-1 flex-wrap pt-0.5">
                     {tags.slice(0, 3).map((tag) => (
-                      <span key={tag} style={{ padding: "2px 7px", borderRadius: "10px", fontSize: "10px", border: "0.5px solid", ...tagStyle(tag) }}>
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className={cn(
+                          "px-1.5 py-0 h-4 text-[9px] rounded font-semibold",
+                          tag === "work" && "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400 dark:bg-blue-950/30 dark:border-blue-900/40",
+                          tag === "personal" && "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-900/40",
+                          tag === "important" && "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-900/40",
+                          tag === "budget" && "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400 dark:bg-purple-950/30 dark:border-purple-900/40",
+                          tag === "meeting" && "bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:text-indigo-400 dark:bg-indigo-950/30 dark:border-indigo-900/40",
+                          tag === "social" && "bg-pink-500/10 text-pink-600 border-pink-500/20 dark:text-pink-400 dark:bg-pink-950/30 dark:border-pink-900/40"
+                        )}
+                      >
                         {tag}
-                      </span>
+                      </Badge>
                     ))}
                   </div>
                 )}

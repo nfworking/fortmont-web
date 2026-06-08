@@ -4,7 +4,9 @@ import * as React from "react"
 import { FolderType } from "./mail"
 import { getInitials } from "./formatters"
 import { signOut } from "next-auth/react"
-import { S } from "./styles"
+import { cn } from "@/lib/utils"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import {
   Archive,
   ChevronDown,
@@ -32,88 +34,85 @@ export function Sidebar({ userName, activeFolder, unreadCount, onFolderChange }:
   const userInitials = getInitials(userName)
 
   const FOLDER_NAV: { label: string; folder: FolderType; icon: React.ReactNode }[] = [
-    { label: "Inbox",   folder: "inbox",   icon: <Inbox   size={14} /> },
-    { label: "Drafts",  folder: "drafts",  icon: <File    size={14} /> },
-    { label: "Sent",    folder: "sent",    icon: <Send    size={14} /> },
-    { label: "Starred", folder: "starred", icon: <Star    size={14} /> },
-    { label: "Archive", folder: "archive", icon: <Archive size={14} /> },
-    { label: "Trash",   folder: "trash",   icon: <Trash2  size={14} /> },
+    { label: "Inbox",   folder: "inbox",   icon: <Inbox   className="size-4" /> },
+    { label: "Drafts",  folder: "drafts",  icon: <File    className="size-4" /> },
+    { label: "Sent",    folder: "sent",    icon: <Send    className="size-4" /> },
+    { label: "Starred", folder: "starred", icon: <Star    className="size-4" /> },
+    { label: "Archive", folder: "archive", icon: <Archive className="size-4" /> },
+    { label: "Trash",   folder: "trash",   icon: <Trash2  className="size-4" /> },
   ]
 
   const CATEGORY_NAV = [
-    { label: "Social",     icon: <Users       size={14} />, count: 972  },
-    { label: "Updates",    icon: <Clock       size={14} />, count: 342  },
-    { label: "Forums",     icon: <MessageCircle size={14} />, count: 128 },
-    { label: "Shopping",   icon: <ShoppingCart size={14} />, count: 8   },
-    { label: "Promotions", icon: <Megaphone size={14} />, count: 21  },
+    { label: "Social",     icon: <Users         className="size-4" />, count: 972  },
+    { label: "Updates",    icon: <Clock         className="size-4" />, count: 342  },
+    { label: "Forums",     icon: <MessageCircle className="size-4" />, count: 128 },
+    { label: "Shopping",   icon: <ShoppingCart  className="size-4" />, count: 8   },
+    { label: "Promotions", icon: <Megaphone     className="size-4" />, count: 21  },
   ]
 
   return (
-    <aside style={S.sidebar}>
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 14px 10px", borderBottom: "0.5px solid #2a2a2a" }}>
-        <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 500, color: "#aaa", flexShrink: 0 }}>
-          {userInitials}
-        </div>
-        <span style={{ flex: 1, fontSize: "12px", fontWeight: 500, color: "#e0e0e0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+    <aside className="w-56 flex-shrink-0 border-r border-border bg-muted/20 flex flex-col h-full overflow-hidden">
+      <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-border/60">
+        <Avatar className="size-7">
+          <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold border border-primary/20">
+            {userInitials}
+          </AvatarFallback>
+        </Avatar>
+        <span className="flex-1 text-xs font-semibold text-foreground truncate">
           {userName}
         </span>
-        <ChevronDown size={13} color="#555" />
+        <ChevronDown className="size-3 text-muted-foreground/60" />
       </div>
 
-      <nav style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
         {FOLDER_NAV.map(({ label, folder, icon }) => {
           const isActive = activeFolder === folder
           return (
             <button
               key={folder}
               onClick={() => onFolderChange(folder)}
-              style={{
-                display: "flex", alignItems: "center", gap: "10px",
-                width: "100%", padding: "6px 14px",
-                background: isActive ? "#222" : "transparent",
-                border: "none", cursor: "pointer",
-                color: isActive ? "#e8e8e8" : "#999",
-                fontSize: "12.5px", textAlign: "left",
-                transition: "background 0.1s",
-              }}
-              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#1e1e1e" }}
-              onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent" }}
+              className={cn(
+                "flex items-center gap-2.5 w-full rounded-md px-3 py-2 text-xs font-medium transition-colors cursor-pointer",
+                isActive
+                  ? "bg-secondary text-secondary-foreground"
+                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+              )}
             >
-              {icon}
-              <span style={{ flex: 1 }}>{label}</span>
+              <span className={cn(isActive ? "text-foreground" : "text-muted-foreground/80")}>
+                {icon}
+              </span>
+              <span className="flex-1 text-left">{label}</span>
               {folder === "inbox" && unreadCount > 0 && (
-                <span style={{ fontSize: "11px", color: "#666" }}>{unreadCount}</span>
+                <Badge variant="secondary" className="px-1.5 py-0 h-4 text-[10px] bg-primary/10 text-primary border-none font-semibold">
+                  {unreadCount}
+                </Badge>
               )}
             </button>
           )
         })}
 
-        <div style={{ padding: "10px 14px 4px", fontSize: "10px", color: "#444", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+        <div className="px-3 pt-4 pb-1.5 text-[9px] font-bold tracking-wider text-muted-foreground/60 uppercase">
           Categories
         </div>
 
         {CATEGORY_NAV.map(({ label, icon, count }) => (
           <button
             key={label}
-            style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "6px 14px", background: "transparent", border: "none", cursor: "pointer", color: "#999", fontSize: "12.5px", textAlign: "left" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#1e1e1e" }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent" }}
+            className="flex items-center gap-2.5 w-full rounded-md px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors cursor-pointer"
           >
-            {icon}
-            <span style={{ flex: 1 }}>{label}</span>
-            <span style={{ fontSize: "11px", color: "#666" }}>{count}</span>
+            <span className="text-muted-foreground/80">{icon}</span>
+            <span className="flex-1 text-left">{label}</span>
+            <span className="text-[10px] text-muted-foreground/50 font-mono pr-0.5">{count}</span>
           </button>
         ))}
       </nav>
 
-      <div style={{ borderTop: "0.5px solid #2a2a2a", padding: "10px 14px" }}>
+      <div className="p-3 border-t border-border/60">
         <button
           onClick={() => signOut()}
-          style={{ display: "flex", alignItems: "center", gap: "8px", background: "transparent", border: "none", cursor: "pointer", color: "#666", fontSize: "12px", width: "100%" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#ccc" }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#666" }}
+          className="flex items-center gap-2 w-full rounded-md px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
         >
-          <LogOut size={13} />
+          <LogOut className="size-4" />
           Sign out
         </button>
       </div>

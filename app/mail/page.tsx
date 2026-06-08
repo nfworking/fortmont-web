@@ -4,11 +4,11 @@ import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { Email, FolderType, MailboxResponse, UserSession } from "@/components/mail/mail"
 import { getEmailContact, extractEmail, extractName, formatFullDate } from "@/components/mail/formatters"
-import { S } from "@/components/mail/styles"
 import { Sidebar } from "@/components/mail/Sidebar"
 import { EmailList } from "@/components/mail/EmailList"
 import { ReadingPane } from "@/components/mail/ReadingPane"
 import { Mail } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export default function MailClient() {
   const [session,       setSession]       = useState<UserSession | null>(null)
@@ -143,29 +143,29 @@ export default function MailClient() {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#111", flexDirection: "column", gap: "12px" }}>
-        <Mail size={24} color="#555" />
-        <p style={{ color: "#555", fontSize: "12px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Loading</p>
+      <div className="flex h-screen w-screen items-center justify-center bg-background flex-col gap-3">
+        <Mail className="size-6 text-muted-foreground animate-pulse" />
+        <p className="text-[10px] tracking-widest text-muted-foreground uppercase font-mono">Loading</p>
       </div>
     )
   }
 
   if (!session?.user) {
     return (
-      <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#111", flexDirection: "column", gap: "24px" }}>
-        <div style={{ width: 52, height: 52, borderRadius: 14, border: "0.5px solid #2a2a2a", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Mail size={22} color="#888" />
+      <div className="flex h-screen w-screen items-center justify-center bg-background flex-col gap-6 px-4">
+        <div className="flex size-14 items-center justify-center rounded-2xl border border-border bg-card shadow-sm">
+          <Mail className="size-6 text-foreground" />
         </div>
-        <div style={{ textAlign: "center" }}>
-          <h1 style={{ fontSize: "20px", fontWeight: 500, color: "#e8e8e8" }}>Mail</h1>
-          <p style={{ fontSize: "13px", color: "#555", marginTop: "6px" }}>Sign in to access your mailbox</p>
+        <div className="text-center">
+          <h1 className="text-xl font-semibold text-foreground">Webmail</h1>
+          <p className="text-sm text-muted-foreground mt-2">Sign in to access your mailbox</p>
         </div>
-        <button
-          onClick={() => (window.location.href = "/api/auth/signin")}
-          style={{ padding: "8px 24px", borderRadius: "8px", border: "0.5px solid #3a5a8a", background: "#1a2a40", color: "#6fa3d4", fontSize: "13px", cursor: "pointer" }}
+        <Button
+          onClick={() => (window.location.href = "/login_webmail?callbackUrl=/mail")}
+          className="h-9 px-6"
         >
           Sign in
-        </button>
+        </Button>
       </div>
     )
   }
@@ -175,7 +175,7 @@ export default function MailClient() {
   const selectedName = selectedEmail ? extractName(selectedContact) : ""
 
   return (
-    <div style={S.root}>
+    <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden">
       <Sidebar
         userName={userName}
         activeFolder={activeFolder}
@@ -210,8 +210,6 @@ export default function MailClient() {
         handleSendReply={handleSendReply}
         openForwardCompose={openForwardCompose}
       />
-
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

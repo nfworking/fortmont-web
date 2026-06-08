@@ -17,6 +17,7 @@ import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,31 +70,31 @@ const fmt: Formatter = {
 const StatusPill: React.FC<StatusPillProps> = ({ value }) => {
   const norm = String(value ?? "").toLowerCase();
   const styles: Record<string, string> = {
-    enabled:      "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-    active:       "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-    running:      "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-    succeeded:    "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-    available:    "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-    compliant:    "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-    managed:      "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-    yes:          "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-    disabled:     "bg-black text-zinc-400 border-zinc-500/20",
-    stopped:      "bg-black text-zinc-400 border-zinc-500/20",
-    deallocated:  "bg-black text-zinc-400 border-zinc-500/20",
-    unmanaged:    "bg-black text-zinc-400 border-zinc-500/20",
-    no:           "bg-black text-zinc-400 border-zinc-500/20",
-    failed:       "bg-red-500/15 text-red-400 border-red-500/20",
-    error:        "bg-red-500/15 text-red-400 border-red-500/20",
-    "non-compliant": "bg-red-500/15 text-red-400 border-red-500/20",
-    pending:      "bg-amber-500/15 text-amber-400 border-amber-500/20",
-    updating:     "bg-amber-500/15 text-amber-400 border-amber-500/20",
-    "in process": "bg-amber-500/15 text-amber-400 border-amber-500/20",
-    "report only":"bg-blue-500/15 text-blue-400 border-blue-500/20",
+    enabled:      "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-900/40",
+    active:       "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-900/40",
+    running:      "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-900/40",
+    succeeded:    "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-900/40",
+    available:    "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-900/40",
+    compliant:    "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-900/40",
+    managed:      "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-900/40",
+    yes:          "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-900/40",
+    disabled:     "bg-muted text-muted-foreground border-border/60",
+    stopped:      "bg-muted text-muted-foreground border-border/60",
+    deallocated:  "bg-muted text-muted-foreground border-border/60",
+    unmanaged:    "bg-muted text-muted-foreground border-border/60",
+    no:           "bg-muted text-muted-foreground border-border/60",
+    failed:       "bg-destructive/10 text-destructive border-destructive/20",
+    error:        "bg-destructive/10 text-destructive border-destructive/20",
+    "non-compliant": "bg-destructive/10 text-destructive border-destructive/20",
+    pending:      "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-900/40",
+    updating:     "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-900/40",
+    "in process": "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-900/40",
+    "report only":"bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400 dark:bg-blue-950/30 dark:border-blue-900/40",
   };
-  const cls = styles[norm] ?? "bg-black text-zinc-400 border-zinc-500/20";
+  const cls = styles[norm] ?? "bg-muted text-muted-foreground border-border/60";
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${cls}`}>
-      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${cls}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
       {String(value ?? "—")}
     </span>
   );
@@ -103,23 +104,23 @@ const StatusPill: React.FC<StatusPillProps> = ({ value }) => {
 
 const MetricCard: React.FC<MetricCardProps> = ({ label, value, sub, trend, trendLabel, icon: Icon, iconColor }) => {
   const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
-  const trendColor = trend === "up" ? "text-emerald-400" : trend === "down" ? "text-red-400" : "text-zinc-500";
+  const trendColor = trend === "up" ? "text-emerald-600 dark:text-emerald-400" : trend === "down" ? "text-destructive" : "text-muted-foreground";
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-col gap-3">
+    <div className="bg-card border border-border/60 rounded-xl p-5 flex flex-col gap-3 shadow-sm">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-zinc-500 font-medium">{label}</span>
+        <span className="text-xs text-muted-foreground font-medium">{label}</span>
         {trendLabel && (
           <span className={`flex items-center gap-1 text-xs font-medium ${trendColor}`}>
-            <TrendIcon size={12} />
+            <TrendIcon className="size-3" />
             {trendLabel}
           </span>
         )}
       </div>
       <div className="flex items-end justify-between">
-        <span className="text-3xl font-bold text-white tabular-nums">{value}</span>
-        {Icon && <Icon size={20} className={iconColor ?? "text-zinc-600"} />}
+        <span className="text-3xl font-bold text-foreground tabular-nums leading-none">{value}</span>
+        {Icon && <Icon className={iconColor ? iconColor.replace("text-zinc-600", "text-muted-foreground").replace("text-blue-500/50", "text-blue-500/60").replace("text-emerald-500/50", "text-emerald-500/60").replace("text-amber-500/50", "text-amber-500/60").replace("text-violet-500/50", "text-violet-500/60") : "text-muted-foreground/50"} size={20} />}
       </div>
-      {sub && <p className="text-xs text-zinc-500 leading-tight">{sub}</p>}
+      {sub && <p className="text-xs text-muted-foreground/80 leading-tight">{sub}</p>}
     </div>
   );
 };
@@ -127,8 +128,8 @@ const MetricCard: React.FC<MetricCardProps> = ({ label, value, sub, trend, trend
 // ── Error state ───────────────────────────────────────────────────────────────
 
 const ErrorState: React.FC<{ message: string }> = ({ message }) => (
-  <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm my-4">
-    <AlertCircle size={15} />
+  <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm my-4">
+    <AlertCircle className="size-4 shrink-0" />
     {message}
   </div>
 );
@@ -138,9 +139,9 @@ const ErrorState: React.FC<{ message: string }> = ({ message }) => (
 const LoadingRows: React.FC<{ cols?: number; rows?: number }> = ({ cols = 4, rows = 6 }) => (
   <>
     {Array.from({ length: rows }).map((_, i) => (
-      <TableRow key={i} className="border-zinc-800">
+      <TableRow key={i} className="border-border/40">
         {Array.from({ length: cols }).map((_, j) => (
-          <TableCell key={j}><Skeleton className="h-4 w-full bg-zinc-800" /></TableCell>
+          <TableCell key={j}><Skeleton className="h-4 w-full bg-muted/40" /></TableCell>
         ))}
       </TableRow>
     ))}
@@ -150,9 +151,9 @@ const LoadingRows: React.FC<{ cols?: number; rows?: number }> = ({ cols = 4, row
 const LoadingMetrics: React.FC<{ count?: number }> = ({ count = 4 }) => (
   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
     {Array.from({ length: count }).map((_, i) => (
-      <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-        <Skeleton className="h-4 w-24 mb-4 bg-zinc-800" />
-        <Skeleton className="h-8 w-16 bg-zinc-800" />
+      <div key={i} className="bg-card border border-border/60 rounded-xl p-5 shadow-sm">
+        <Skeleton className="h-4 w-24 mb-4 bg-muted/40" />
+        <Skeleton className="h-8 w-16 bg-muted/40" />
       </div>
     ))}
   </div>
@@ -199,16 +200,16 @@ function useApiData<T>(endpoint: string, params: Record<string, string | number>
 // ── Section header ────────────────────────────────────────────────────────────
 
 const SectionHeader: React.FC<SectionHeaderProps> = ({ title, count, lastFetched, onRefresh, loading }) => (
-  <div className="flex items-center justify-between mb-4">
+  <div className="flex items-center justify-between mb-4 mt-2">
     <div className="flex items-center gap-2">
-      <h3 className="text-sm font-semibold text-white">{title}</h3>
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       {count !== undefined && (
-        <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full">{count}</span>
+        <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-medium">{count}</span>
       )}
     </div>
     <div className="flex items-center gap-3">
       {lastFetched && (
-        <span className="text-[11px] text-zinc-600 font-mono hidden sm:block">
+        <span className="text-[11px] text-muted-foreground/80 font-mono hidden sm:block">
           {fmt.datetime(lastFetched)}
         </span>
       )}
@@ -217,10 +218,10 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title, count, lastFetched
           <TooltipTrigger asChild>
             <Button
               variant="ghost" size="icon"
-              className="h-7 w-7 text-zinc-500 hover:text-white hover:bg-zinc-800"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
               onClick={onRefresh} disabled={loading}
             >
-              <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+              <RefreshCw className={cn("size-3.5", loading ? "animate-spin" : "")} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Refresh</TooltipContent>
@@ -233,7 +234,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title, count, lastFetched
 // ── Shared table wrapper ──────────────────────────────────────────────────────
 
 const DataTable: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="rounded-xl border border-zinc-800 overflow-hidden">
+  <div className="rounded-xl border border-border/60 overflow-hidden bg-card shadow-sm">
     <Table>{children}</Table>
   </div>
 );
@@ -299,7 +300,7 @@ function EntraUsers() {
       <SectionHeader title="All Users" count={users.length} lastFetched={lastFetched} onRefresh={refresh} loading={loading} />
       <DataTable>
         <TableHeader>
-          <TableRow className="border-zinc-800 hover:bg-transparent">
+          <TableRow className="border-border/60 hover:bg-transparent">
             <Th>Display Name</Th><Th>User Principal Name</Th><Th>Job Title</Th>
             <Th>Type</Th><Th>Status</Th><Th>Created</Th>
           </TableRow>
@@ -310,7 +311,7 @@ function EntraUsers() {
               <Td><span className="font-medium text-white">{u.displayName}</span></Td>
               <Td><span className="font-mono text-xs text-zinc-500 max-w-[200px] block truncate">{u.userPrincipalName}</span></Td>
               <Td className="text-zinc-400">{u.jobTitle ?? "—"}</Td>
-              <Td><span className="text-xs text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full">{u.userType ?? "Member"}</span></Td>
+              <Td><span className="text-xs text-zinc-400 bg-muted px-2 py-0.5 rounded-full">{u.userType ?? "Member"}</span></Td>
               <Td><StatusPill value={u.accountEnabled ? "Enabled" : "Disabled"} /></Td>
               <Td className="text-zinc-500 text-xs">{fmt.date(u.createdDateTime)}</Td>
             </Tr>
@@ -354,7 +355,7 @@ function EntraGroups() {
       <SectionHeader title="All Groups" count={groups.length} lastFetched={lastFetched} onRefresh={refresh} loading={loading} />
       <DataTable>
         <TableHeader>
-          <TableRow className="border-zinc-800 hover:bg-transparent">
+          <TableRow className="border-border/60 hover:bg-transparent">
             <Th>Name</Th><Th>Description</Th><Th>Type</Th><Th>Mail Enabled</Th><Th>Created</Th>
           </TableRow>
         </TableHeader>
@@ -413,7 +414,7 @@ function EntraDevices() {
       <SectionHeader title="All Devices" count={devices.length} lastFetched={lastFetched} onRefresh={refresh} loading={loading} />
       <DataTable>
         <TableHeader>
-          <TableRow className="border-zinc-800 hover:bg-transparent">
+          <TableRow className="border-border/60 hover:bg-transparent">
             <Th>Device Name</Th><Th>OS</Th><Th>Version</Th><Th>Join Type</Th><Th>Compliant</Th><Th>Managed</Th><Th>Last Sign-In</Th>
           </TableRow>
         </TableHeader>
@@ -423,7 +424,7 @@ function EntraDevices() {
               <Td><span className="font-mono text-xs text-white">{d.displayName}</span></Td>
               <Td className="text-zinc-400">{d.operatingSystem ?? "—"}</Td>
               <Td><span className="font-mono text-xs text-zinc-500">{d.operatingSystemVersion ?? "—"}</span></Td>
-              <Td><span className="text-xs text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full">{d.trustType ?? "—"}</span></Td>
+              <Td><span className="text-xs text-zinc-400 bg-muted px-2 py-0.5 rounded-full">{d.trustType ?? "—"}</span></Td>
               <Td><StatusPill value={d.isCompliant ? "Compliant" : "Non-Compliant"} /></Td>
               <Td><StatusPill value={d.isManaged ? "Managed" : "Unmanaged"} /></Td>
               <Td className="text-zinc-500 text-xs">{fmt.date(d.approximateLastSignInDateTime)}</Td>
@@ -478,7 +479,7 @@ function EntraApps() {
       <SectionHeader title="App Registrations" count={apps.length} lastFetched={lastFetched} onRefresh={refresh} loading={loading} />
       <DataTable>
         <TableHeader>
-          <TableRow className="border-zinc-800 hover:bg-transparent">
+          <TableRow className="border-border/60 hover:bg-transparent">
             <Th>Name</Th><Th>App ID</Th><Th>Audience</Th><Th>Secrets</Th><Th>Certs</Th><Th>Created</Th>
           </TableRow>
         </TableHeader>
@@ -537,7 +538,7 @@ function EntraSignInLogs() {
       <SectionHeader title="Sign-In Log" count={logs.length} lastFetched={lastFetched} onRefresh={refresh} loading={loading} />
       <DataTable>
         <TableHeader>
-          <TableRow className="border-zinc-800 hover:bg-transparent">
+          <TableRow className="border-border/60 hover:bg-transparent">
             <Th>User</Th><Th>Application</Th><Th>IP Address</Th><Th>Location</Th><Th>Status</Th><Th>MFA</Th><Th>Date</Th>
           </TableRow>
         </TableHeader>
@@ -599,7 +600,7 @@ function EntraConditionalAccess() {
       <SectionHeader title="Conditional Access Policies" count={policies.length} lastFetched={lastFetched} onRefresh={refresh} loading={loading} />
       <DataTable>
         <TableHeader>
-          <TableRow className="border-zinc-800 hover:bg-transparent">
+          <TableRow className="border-border/60 hover:bg-transparent">
             <Th>Policy Name</Th><Th>State</Th><Th>Users</Th><Th>Applications</Th><Th>Grant Controls</Th><Th>Modified</Th>
           </TableRow>
         </TableHeader>
@@ -657,7 +658,7 @@ function AzureSubscriptions() {
       <SectionHeader title="Subscriptions" count={subs.length} lastFetched={lastFetched} onRefresh={refresh} loading={loading} />
       <DataTable>
         <TableHeader>
-          <TableRow className="border-zinc-800 hover:bg-transparent">
+          <TableRow className="border-border/60 hover:bg-transparent">
             <Th>Name</Th><Th>Subscription ID</Th><Th>Tenant ID</Th><Th>Offer</Th><Th>Spending Limit</Th><Th>State</Th>
           </TableRow>
         </TableHeader>
@@ -704,7 +705,7 @@ function AzureResourceGroups() {
       <SectionHeader title="Resource Groups" count={groups.length} lastFetched={lastFetched} onRefresh={refresh} loading={loading} />
       <DataTable>
         <TableHeader>
-          <TableRow className="border-zinc-800 hover:bg-transparent">
+          <TableRow className="border-border/60 hover:bg-transparent">
             <Th>Name</Th><Th>Location</Th><Th>Provisioning State</Th><Th>Tags</Th>
           </TableRow>
         </TableHeader>
@@ -717,7 +718,7 @@ function AzureResourceGroups() {
               <Td>
                 <div className="flex gap-1 flex-wrap">
                   {Object.entries(g.tags ?? {}).slice(0, 3).map(([k, v]) => (
-                    <span key={k} className="text-[11px] font-mono text-zinc-400 bg-zinc-800 px-1.5 py-0.5 rounded">{k}={v}</span>
+                    <span key={k} className="text-[11px] font-mono text-zinc-400 bg-muted px-1.5 py-0.5 rounded">{k}={v}</span>
                   ))}
                   {Object.keys(g.tags ?? {}).length === 0 && <span className="text-xs text-zinc-600">—</span>}
                 </div>
@@ -778,7 +779,7 @@ function AzureVMs() {
       <SectionHeader title="Virtual Machines" count={vms.length} lastFetched={lastFetched} onRefresh={refresh} loading={loading} />
       <DataTable>
         <TableHeader>
-          <TableRow className="border-zinc-800 hover:bg-transparent">
+          <TableRow className="border-border/60 hover:bg-transparent">
             <Th>Name</Th><Th>Resource Group</Th><Th>Location</Th><Th>Size</Th><Th>OS</Th><Th>Power State</Th>
           </TableRow>
         </TableHeader>
@@ -837,7 +838,7 @@ function AzureStorage() {
       <SectionHeader title="Storage Accounts" count={accounts.length} lastFetched={lastFetched} onRefresh={refresh} loading={loading} />
       <DataTable>
         <TableHeader>
-          <TableRow className="border-zinc-800 hover:bg-transparent">
+          <TableRow className="border-border/60 hover:bg-transparent">
             <Th>Name</Th><Th>Location</Th><Th>SKU</Th><Th>Kind</Th><Th>Min TLS</Th><Th>HTTPS Only</Th><Th>State</Th>
           </TableRow>
         </TableHeader>
@@ -891,7 +892,7 @@ function AzureRoles() {
       <SectionHeader title="Role Assignments" count={roles.length} lastFetched={lastFetched} onRefresh={refresh} loading={loading} />
       <DataTable>
         <TableHeader>
-          <TableRow className="border-zinc-800 hover:bg-transparent">
+          <TableRow className="border-border/60 hover:bg-transparent">
             <Th>Principal ID</Th><Th>Principal Type</Th><Th>Role</Th><Th>Scope</Th>
           </TableRow>
         </TableHeader>
@@ -901,7 +902,7 @@ function AzureRoles() {
             return (
               <Tr key={r.id ?? i}>
                 <Td><span className="font-mono text-xs text-zinc-500 max-w-[180px] block truncate">{props.principalId}</span></Td>
-                <Td><span className="text-xs text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full">{props.principalType ?? "—"}</span></Td>
+                <Td><span className="text-xs text-zinc-400 bg-muted px-2 py-0.5 rounded-full">{props.principalType ?? "—"}</span></Td>
                 <Td><span className="font-mono text-xs text-zinc-400 max-w-[200px] block truncate">{props.roleDefinitionId?.split("/").pop() ?? "—"}</span></Td>
                 <Td><span className="text-xs text-zinc-500 max-w-[200px] block truncate">{props.scope ?? r.scope ?? "—"}</span></Td>
               </Tr>
@@ -943,80 +944,56 @@ const AZURE_TABS: TabConfig[] = [
 export default function EntraAzureDashboard() {
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      <div className="bg-background text-foreground p-4 md:p-6 flex flex-col gap-6">
+        <Tabs defaultValue="entra" className="space-y-6">
 
-        {/* ── Top nav ──────────────────────────────────────────────────── */}
-        <div className="border-b border-zinc-800 bg-zinc-950 px-6 py-3 sticky top-0 z-10">
-          <div className="max-w-screen-xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Shield size={18} className="text-blue-400" />
-              <span className="font-semibold text-sm text-white tracking-tight">Entra &amp; Azure</span>
-              <span className="text-zinc-600 text-xs hidden sm:block">/ Cloud Administration Console</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs text-zinc-500">Live</span>
-            </div>
-          </div>
-        </div>
+          {/* Cloud selector */}
+          <TabsList className="w-fit">
+            <TabsTrigger value="entra" className="gap-2">
+              <Shield className="size-4" /> Entra ID
+            </TabsTrigger>
+            <TabsTrigger value="azure" className="gap-2">
+              <Building2 className="size-4" /> Azure
+            </TabsTrigger>
+          </TabsList>
 
-        {/* ── Body ─────────────────────────────────────────────────────── */}
-        <div className="max-w-screen-xl mx-auto px-6 py-6">
-          <Tabs defaultValue="entra" className="space-y-6">
+          {/* ── ENTRA ── */}
+          <TabsContent value="entra" className="mt-0">
+            <Tabs defaultValue="users">
+              <TabsList variant="line" className="w-full justify-start border-b border-border/60 pb-0 mb-6 gap-1">
+                {ENTRA_TABS.map(({ value, label, icon: Icon }) => (
+                  <TabsTrigger key={value} value={value} className="gap-1.5 text-xs px-4 py-2">
+                    <Icon className="size-3.5" />{label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <TabsContent value="users"><EntraUsers /></TabsContent>
+              <TabsContent value="groups"><EntraGroups /></TabsContent>
+              <TabsContent value="devices"><EntraDevices /></TabsContent>
+              <TabsContent value="apps"><EntraApps /></TabsContent>
+              <TabsContent value="signin"><EntraSignInLogs /></TabsContent>
+              <TabsContent value="ca"><EntraConditionalAccess /></TabsContent>
+            </Tabs>
+          </TabsContent>
+          {/* ── AZURE ── */}
+          <TabsContent value="azure" className="mt-0">
+            <Tabs defaultValue="subscriptions">
+              <TabsList variant="line" className="w-full justify-start border-b border-border/60 pb-0 mb-6 gap-1">
+                {AZURE_TABS.map(({ value, label, icon: Icon }) => (
+                  <TabsTrigger key={value} value={value} className="gap-1.5 text-xs px-4 py-2">
+                    <Icon className="size-3.5" />{label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <TabsContent value="subscriptions"><AzureSubscriptions /></TabsContent>
+              <TabsContent value="rgs"><AzureResourceGroups /></TabsContent>
+              <TabsContent value="vms"><AzureVMs /></TabsContent>
+              <TabsContent value="storage"><AzureStorage /></TabsContent>
+              <TabsContent value="roles"><AzureRoles /></TabsContent>
+            </Tabs>
+          </TabsContent>
 
-            {/* Cloud selector */}
-            <TabsList className="bg-zinc-900 border border-zinc-800 p-1 h-auto">
-              <TabsTrigger value="entra"
-                className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white text-zinc-400 gap-2 text-sm px-4 py-1.5">
-                <Shield size={14} /> Entra ID
-              </TabsTrigger>
-              <TabsTrigger value="azure"
-                className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white text-zinc-400 gap-2 text-sm px-4 py-1.5">
-                <Building2 size={14} /> Azure
-              </TabsTrigger>
-            </TabsList>
-
-            {/* ── ENTRA ── */}
-            <TabsContent value="entra" className="mt-0">
-              <Tabs defaultValue="users">
-                <TabsList className="bg-transparent border-b border-zinc-800 rounded-none w-full justify-start p-0 h-auto mb-6 gap-0">
-                  {ENTRA_TABS.map(({ value, label, icon: Icon }) => (
-                    <TabsTrigger key={value} value={value}
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-zinc-500 gap-1.5 text-xs px-4 py-2.5 h-auto bg-transparent hover:text-zinc-300 transition-colors">
-                      <Icon size={13} />{label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                <TabsContent value="users"><EntraUsers /></TabsContent>
-                <TabsContent value="groups"><EntraGroups /></TabsContent>
-                <TabsContent value="devices"><EntraDevices /></TabsContent>
-                <TabsContent value="apps"><EntraApps /></TabsContent>
-                <TabsContent value="signin"><EntraSignInLogs /></TabsContent>
-                <TabsContent value="ca"><EntraConditionalAccess /></TabsContent>
-              </Tabs>
-            </TabsContent>
-
-            {/* ── AZURE ── */}
-            <TabsContent value="azure" className="mt-0">
-              <Tabs defaultValue="subscriptions">
-                <TabsList className="bg-transparent border-b border-zinc-800 rounded-none w-full justify-start p-0 h-auto mb-6 gap-0">
-                  {AZURE_TABS.map(({ value, label, icon: Icon }) => (
-                    <TabsTrigger key={value} value={value}
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-zinc-500 gap-1.5 text-xs px-4 py-2.5 h-auto bg-transparent hover:text-zinc-300 transition-colors">
-                      <Icon size={13} />{label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                <TabsContent value="subscriptions"><AzureSubscriptions /></TabsContent>
-                <TabsContent value="rgs"><AzureResourceGroups /></TabsContent>
-                <TabsContent value="vms"><AzureVMs /></TabsContent>
-                <TabsContent value="storage"><AzureStorage /></TabsContent>
-                <TabsContent value="roles"><AzureRoles /></TabsContent>
-              </Tabs>
-            </TabsContent>
-
-          </Tabs>
-        </div>
+        </Tabs>
       </div>
     </TooltipProvider>
   );
