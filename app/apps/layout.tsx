@@ -48,11 +48,9 @@ export default async function AppsLayout({
       </div>
 
       {/* App shell sits on top */}
-      <DashboardPage
+      <DashboardPage/>
         
-      >
-        {children}
-      </DashboardPage>
+
     </div>
   );
 }
