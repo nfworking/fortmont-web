@@ -1,13 +1,13 @@
 {
   "name": "fortmontapi",
-  "version": "2.9.3",
+  "version": "2.10.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "docker:build": "docker build -t fortmontapi:2.9.3 .",
-    "docker:tag": "docker tag fortmontapi:2.9.3 172.20.0.18:5000/fortmontapi:2.9.3",
-    "docker:push": "docker push 172.20.0.18:5000/fortmontapi:2.9.3",
+    "docker:build": "docker build -t fortmontapi:2.10.3 .",
+    "docker:tag": "docker tag fortmontapi:2.10.3 172.20.0.18:5000/fortmontapi:2.10.3",
+    "docker:push": "docker push 172.20.0.18:5000/fortmontapi:2.10.3",
     "start": "next start",
     "lint": "eslint"
   },
