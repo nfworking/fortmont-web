@@ -108,6 +108,13 @@ export function Sidebar({ userName, activeFolder, unreadCount, onFolderChange }:
       </nav>
 
       <div className="p-3 border-t border-border/60">
+       <button
+          onClick={() => window.location.href = "/dashboard"}
+          className="flex items-center gap-2 w-full rounded-md px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-green hover:text-green transition-colors cursor-pointer"
+        >
+         
+          Access Dashboard
+        </button>
         <button
           onClick={() => signOut()}
           className="flex items-center gap-2 w-full rounded-md px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
@@ -115,6 +122,7 @@ export function Sidebar({ userName, activeFolder, unreadCount, onFolderChange }:
           <LogOut className="size-4" />
           Sign out
         </button>
+       
       </div>
     </aside>
   )

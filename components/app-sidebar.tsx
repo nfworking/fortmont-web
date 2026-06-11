@@ -102,6 +102,14 @@ const data = {
         <MailIcon />
       ),
      },
+
+     {
+      title: "Apps",
+      url: "/apps",
+      icon: (
+        <CommandIcon />
+      ),
+     }
   
     ],
 }

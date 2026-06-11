@@ -1,57 +1,62 @@
+
 import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import { authConfig } from "@/lib/auth.config";
 
 const { auth } = NextAuth(authConfig);
 
-const publicRoutes = ["/login", "/login_webmail", "/signup", "/apps"];
-const apiAuthPrefix = "/api/auth";
+
+const publicRoutes = ["/apps"];
+const authPages = ["/login", "/login_webmail", "/signup"];
 
 export default auth((req) => {
-  const { pathname } = req.nextUrl;
+  const { pathname, search } = req.nextUrl;
 
   const isLoggedIn = !!req.auth;
 
- const onboarded = (req.auth?.user as {
-  isOnboarded?: boolean;
-})?.isOnboarded;
+  const onboarded = (req.auth?.user as {
+    isOnboarded?: boolean;
+  })?.isOnboarded;
 
   const isPublicRoute = publicRoutes.some(
-    (route) => pathname === route || pathname.startsWith(route + "/")
+    (route) =>
+      pathname === route || pathname.startsWith(route + "/")
+  );
+
+  const isAuthPage = authPages.some(
+    (route) =>
+      pathname === route || pathname.startsWith(route + "/")
   );
 
   const isOnboardingRoute =
     pathname === "/onboard/user" ||
     pathname.startsWith("/onboard/");
 
-  // Allow NextAuth internal routes
-  if (pathname.startsWith(apiAuthPrefix)) {
+  // Allow public routes
+  if (isPublicRoute) {
     return NextResponse.next();
   }
 
-  // API auth enforcement
-  if (pathname.startsWith("/api")) {
-    if (!isLoggedIn) {
-      return new NextResponse(
-        JSON.stringify({ error: "Unauthorized" }),
-        {
-          status: 401,
-          headers: { "content-type": "application/json" },
-        }
-      );
+  // Not logged in
+  if (!isLoggedIn) {
+    // Allow login/signup pages
+    if (isAuthPage) {
+      return NextResponse.next();
     }
 
-    return NextResponse.next();
-  }
+    // Redirect to login and preserve destination
+    const loginUrl = new URL("/login", req.url);
 
-  // Require login
-  if (!isPublicRoute && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    loginUrl.searchParams.set(
+      "callbackUrl",
+      pathname + search
+    );
+
+    return NextResponse.redirect(loginUrl);
   }
 
   // Force onboarding
   if (
-    isLoggedIn &&
     onboarded === false &&
     !isOnboardingRoute
   ) {
@@ -60,28 +65,41 @@ export default auth((req) => {
     );
   }
 
-  // Prevent onboarded users from revisiting onboarding
+  // Prevent onboarded users revisiting onboarding
   if (
-    isLoggedIn &&
     onboarded === true &&
     isOnboardingRoute
   ) {
+    const callbackUrl =
+      req.nextUrl.searchParams.get("callbackUrl");
+
     return NextResponse.redirect(
-      new URL("/dashboard", req.url)
+      new URL(
+        callbackUrl || "/dashboard",
+        req.url
+      )
     );
   }
 
-  // Prevent logged-in users from login pages
-  if (isPublicRoute && isLoggedIn) {
+  // Logged-in users shouldn't see login/signup
+  if (isAuthPage) {
+    const callbackUrl =
+      req.nextUrl.searchParams.get("callbackUrl");
+
     return NextResponse.redirect(
-      new URL("/dashboard", req.url)
+      new URL(
+        callbackUrl || "/dashboard",
+        req.url
+      )
     );
   }
 
   return NextResponse.next();
 });
+
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api/auth|_next/static|_next/image|favicon.ico).*)",
   ],
 };
+

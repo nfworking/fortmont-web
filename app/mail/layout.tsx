@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import { DashboardBackground } from "@/components/dashboard_res/background";
+import MailClient from "./page";
 
 export default async function AppsLayout({
   children,
@@ -45,11 +46,18 @@ export default async function AppsLayout({
     <div className="relative min-h-screen w-full">
       {/* Fixed background layer */}
       <div className="fixed inset-0 -z-10">
-    <DashboardBackground />
+        <Image
+  src="/maybe.jpg"
+  alt="Dashboard Background"
+  width={1000}
+  height={1080}
+  unoptimized
+  className="object-cover w-full h-full opacity-20"
+/>
       </div>
 
       {/* App shell sits on top */}
-      <DashboardPage/>
+      <MailClient />
         
 
     </div>

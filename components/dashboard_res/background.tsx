@@ -17,7 +17,7 @@ export function DashboardBackground() {
         wireframe={false}
         shader="defaults"
         uTime={0}
-        uSpeed={0.2}
+        uSpeed={0.09}
         uStrength={0.3}
         uDensity={0.8}
         uFrequency={5.5}

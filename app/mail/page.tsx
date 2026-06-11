@@ -143,7 +143,7 @@ export default function MailClient() {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background flex-col gap-3">
+      <div className="flex h-screen w-screen items-center justify-center bg-transparent flex-col gap-3">
         <Mail className="size-6 text-muted-foreground animate-pulse" />
         <p className="text-[10px] tracking-widest text-muted-foreground uppercase font-mono">Loading</p>
       </div>
@@ -152,7 +152,7 @@ export default function MailClient() {
 
   if (!session?.user) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background flex-col gap-6 px-4">
+      <div className="flex h-screen w-screen items-center justify-center bg-transparent flex-col gap-6 px-4">
         <div className="flex size-14 items-center justify-center rounded-2xl border border-border bg-card shadow-sm">
           <Mail className="size-6 text-foreground" />
         </div>
@@ -175,7 +175,7 @@ export default function MailClient() {
   const selectedName = selectedEmail ? extractName(selectedContact) : ""
 
   return (
-    <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden">
+    <div className="flex h-screen bg-transparent text-foreground font-sans overflow-hidden">
       <Sidebar
         userName={userName}
         activeFolder={activeFolder}

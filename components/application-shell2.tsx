@@ -1,4 +1,3 @@
-// app/dashboard/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback, type ReactNode } from "react";
@@ -6,10 +5,20 @@ import {
   Server, Container, ShieldCheck, Globe, Users,
   Activity, Cpu, HardDrive, Wifi, AlertCircle,
   CheckCircle2, XCircle, RefreshCw,
+  ArrowUpRight, AppWindow
 } from "lucide-react";
 import type { ClusterSummary, PveNode } from "@/lib/proxmox";
 
 const POLL_INTERVAL = 5_000; // ms
+
+// Type definitions for the Compose API response matching backend payload
+interface ComposeApp {
+  label: string;
+  description: string;
+  url?: string;
+  icon?: string;
+  status?: "online" | "offline"; // Live response field from backend check
+}
 
 // ── Formatters ─────────────────────────────────────────────────────────────
 function fmtBytes(bytes: number): string {
@@ -99,21 +108,59 @@ function NodeRow({ node }: { node: PveNode }) {
 }
 
 // ── Quick link ─────────────────────────────────────────────────────────────
-function QuickLink({ icon, label, description }: { icon: ReactNode; label: string; description: string }) {
+function QuickLink({ 
+  icon, 
+  label, 
+  description, 
+  url, 
+  status 
+}: { 
+  icon: ReactNode; 
+  label: string; 
+  description: string; 
+  url?: string; 
+  status?: "online" | "offline";
+}) {
   return (
-    <GlassCard className="group flex cursor-pointer items-start gap-4 p-5 transition-all duration-200 hover:bg-white/20 hover:shadow-xl">
+    <GlassCard className="group relative flex cursor-pointer items-start gap-4 p-5 transition-all duration-200 hover:bg-white/20 hover:shadow-xl">
+      
+      {/* Live Pulsing Dot Status Indicator */}
+      <div className="absolute right-4 top-4 flex h-2.5 w-2.5">
+        {status === "online" && (
+          <>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75 duration-1000"></span>
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+          </>
+        )}
+        {status === "offline" && (
+          <>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75 duration-1000"></span>
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500"></span>
+          </>
+        )}
+        {!status && (
+          <span className="relative inline-flex h-2.5 w-2.5 animate-pulse rounded-full bg-white/20"></span>
+        )}
+      </div>
+
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white/70 group-hover:bg-white/20 group-hover:text-white">
         {icon}
       </div>
-      <div>
+      <div className="pr-4">
         <p className="font-semibold text-white">{label}</p>
         <p className="mt-0.5 text-xs text-white/50">{description}</p>
+        {url && (
+          <a href={url} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-sky-400 opacity-0 transition-opacity group-hover:opacity-100">
+            View
+            <ArrowUpRight className="h-3 w-3" />
+          </a>
+        )}
       </div>
     </GlassCard>
   );
 }
 
-// ── Polling hook ───────────────────────────────────────────────────────────
+// ── Proxmox Polling hook ───────────────────────────────────────────────────
 function useClusterSummary() {
   const [data,      setData]      = useState<ClusterSummary | null>(null);
   const [error,     setError]     = useState<string | null>(null);
@@ -145,21 +192,72 @@ function useClusterSummary() {
   return { data, error, lastFetch, spinning, refresh: fetch_ };
 }
 
-// ── Page ───────────────────────────────────────────────────────────────────
-const LINKS = [
-  { icon: <Server className="h-5 w-5" />,      label: "Server Registry",  description: "Browse and manage physical hosts" },
-  { icon: <Container className="h-5 w-5" />,   label: "LXC Registry",     description: "Inspect running containers" },
-  { icon: <ShieldCheck className="h-5 w-5" />, label: "SSL Certificates", description: "View expiry and renewal status" },
-  { icon: <Globe className="h-5 w-5" />,        label: "DNS Records",      description: "Manage zones and records" },
-  { icon: <Users className="h-5 w-5" />,        label: "Site Users",       description: "Access control and roles" },
-  { icon: <Activity className="h-5 w-5" />,     label: "Proxy",            description: "Reverse proxy routes" },
-];
+// ── Compose Apps Polling Hook ──────────────────────────────────────────────
+function useComposeApps() {
+  const [apps, setApps] = useState<ComposeApp[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  const fetchApps = useCallback(async () => {
+    try {
+      const res = await fetch("/api/operations/get/apps");
+      const json = await res.json();
+      
+      if (!res.ok) throw new Error(json.error ?? "Failed to fetch apps data");
+      setApps(json.data ?? json);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown API app payload error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchApps();
+    const id = setInterval(fetchApps, POLL_INTERVAL);
+    return () => clearInterval(id);
+  }, [fetchApps]);
+
+  return { apps, error, loading, refreshApps: fetchApps };
+}
+
+// Helper to gracefully assign UI icons depending on incoming API names
+function getAppIcon(label: string) {
+  const lowerLabel = label.toLowerCase();
+  if (lowerLabel.includes("registry") || lowerLabel.includes("host") || lowerLabel.includes("server")) {
+    return <Server className="h-5 w-5" />;
+  }
+  if (lowerLabel.includes("lxc") || lowerLabel.includes("container") || lowerLabel.includes("docker")) {
+    return <Container className="h-5 w-5" />;
+  }
+  if (lowerLabel.includes("ssl") || lowerLabel.includes("cert") || lowerLabel.includes("shield")) {
+    return <ShieldCheck className="h-5 w-5" />;
+  }
+  if (lowerLabel.includes("dns") || lowerLabel.includes("zone") || lowerLabel.includes("globe")) {
+    return <Globe className="h-5 w-5" />;
+  }
+  if (lowerLabel.includes("user") || lowerLabel.includes("member") || lowerLabel.includes("role")) {
+    return <Users className="h-5 w-5" />;
+  }
+  if (lowerLabel.includes("proxy") || lowerLabel.includes("route") || lowerLabel.includes("activity")) {
+    return <Activity className="h-5 w-5" />;
+  }
+  return <AppWindow className="h-5 w-5" />; // Generic default fallback
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const { data, error, lastFetch, spinning, refresh } = useClusterSummary();
+  const { data, error: clusterError, lastFetch, spinning, refresh: refreshCluster } = useClusterSummary();
+  const { apps, error: appsError, loading: appsLoading, refreshApps } = useComposeApps();
 
   const memPct  = data ? (data.memUsedBytes  / data.memTotalBytes)  * 100 : 0;
   const diskPct = data ? (data.diskUsedBytes / data.diskTotalBytes) * 100 : 0;
+
+  const handleManualRefresh = () => {
+    refreshCluster();
+    refreshApps();
+  };
 
   return (
     <div className="min-h-screen bg-transparent px-6 py-8">
@@ -178,25 +276,38 @@ export default function DashboardPage() {
               </span>
             )}
             <button
-              onClick={refresh}
-              disabled={spinning}
+              onClick={handleManualRefresh}
+              disabled={spinning || appsLoading}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-white/50 backdrop-blur-md transition hover:bg-white/20 hover:text-white disabled:opacity-40"
               aria-label="Refresh"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${spinning ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-3.5 w-3.5 ${spinning || appsLoading ? "animate-spin" : ""}`} />
             </button>
           </div>
         </div>
 
-        {/* API error */}
-        {error && (
-          <GlassCard className="flex items-center gap-3 p-4">
-            <AlertCircle className="h-5 w-5 shrink-0 text-red-400" />
-            <div>
-              <p className="font-semibold text-white">Could not reach Proxmox API</p>
-              <p className="mt-0.5 text-xs text-white/50">{error}</p>
-            </div>
-          </GlassCard>
+        {/* API errors */}
+        {(clusterError || appsError) && (
+          <div className="space-y-2">
+            {clusterError && (
+              <GlassCard className="flex items-center gap-3 p-4">
+                <AlertCircle className="h-5 w-5 shrink-0 text-red-400" />
+                <div>
+                  <p className="font-semibold text-white">Could not reach Proxmox API</p>
+                  <p className="mt-0.5 text-xs text-white/50">{clusterError}</p>
+                </div>
+              </GlassCard>
+            )}
+            {appsError && (
+              <GlassCard className="flex items-center gap-3 p-4">
+                <AlertCircle className="h-5 w-5 shrink-0 text-red-400" />
+                <div>
+                  <p className="font-semibold text-white">Could not fetch Compose Apps infrastructure</p>
+                  <p className="mt-0.5 text-xs text-white/50">{appsError}</p>
+                </div>
+              </GlassCard>
+            )}
+          </div>
         )}
 
         {/* Stat grid — skeleton while loading */}
@@ -235,11 +346,33 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Quick links */}
+          {/* Quick links — dynamic from app compose API */}
           <div className={`space-y-3 ${data?.nodes.length ? "lg:col-span-2" : "lg:col-span-3"}`}>
             <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Quick access</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {LINKS.map((l) => <QuickLink key={l.label} {...l} />)}
+              {apps ? (
+                apps.map((app) => (
+                  <QuickLink 
+                    key={app.label} 
+                    label={app.label} 
+                    description={app.description} 
+                    url={app.url} 
+                    icon={getAppIcon(app.label)} 
+                    status={app.status}
+                  />
+                ))
+              ) : (
+                // Dynamic Apps Skeleton UI Loader
+                Array.from({ length: 6 }).map((_, i) => (
+                  <GlassCard key={i} className="flex items-start gap-4 p-5">
+                    <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-white/10" />
+                    <div className="flex-1 space-y-2 py-1">
+                      <div className="h-4 w-1/3 animate-pulse rounded bg-white/10" />
+                      <div className="h-3 w-3/4 animate-pulse rounded bg-white/10" />
+                    </div>
+                  </GlassCard>
+                ))
+              )}
             </div>
           </div>
 

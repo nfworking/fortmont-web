@@ -29,15 +29,7 @@ model registry {
   server_url String?
 }
 
-model apiUsers {
-  id  String @id @default(uuid())
-  fName String
-  lName String
-  publicPhoto String?
-  department String?
-  role String?
-  personalEmail String
-}
+
 
 model AppUsers {
   id           String   @id @default(uuid())
@@ -96,43 +88,10 @@ model UserMailbox {
 }
 
 
-model ComposeApps {
-  id            String   @id @default(uuid())
+model Apps {
+id                String   @id @default(uuid())
+label             String
+description       String?
+url               String
 
-  name          String   // Jellyfin, Gitea, etc.
-  description   String?
-
-  status        String?  // running, stopped, error
-  category      String?  // media, dev, networking, backup
-
-  compose_path  String?  // path to docker-compose.yml or repo
-  repo_url      String?  // optional git repo
-
-  port          Int?
-  url           String?  // dashboard access URL
-
-  created_at    DateTime @default(now())
-
-  infra_id      String?
-  infra         Infra?   @relation(fields: [infra_id], references: [id])
-}
-
-model Infra {
-  id                String   @id @default(uuid())
-
-  node_name        String
-  node_ip          String
-  node_hostname    String?
-
-  management_url   String?
-
-  role             String?   // e.g. "docker-host", "nas", "proxmox"
-  os               String?   // e.g. "Ubuntu 22.04", "Debian"
-
-  total_storage    String?   // keep simple for now (you can normalize later)
-  used_storage     String?
-
-  created_at       DateTime  @default(now())
-
-  apps             ComposeApps[]
 }

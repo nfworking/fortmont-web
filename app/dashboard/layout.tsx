@@ -2,6 +2,7 @@ import { ApplicationShell1 } from "@/components/application-shell1";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DashboardBackground } from "@/components/dashboard_res/background";
+import Image from "next/image";
 
 export default async function DashboardLayout({
   children,
@@ -43,7 +44,17 @@ export default async function DashboardLayout({
   return (
     <div className="relative min-h-screen w-full">
       {/* Fixed background layer */}
-     
+      <div className="fixed inset-0 -z-10">
+     <Image
+       src="/dashboard2.jpg"
+       alt="Dashboard Background"
+       width={1000}
+       height={1080}
+       unoptimized
+       loading="eager"
+       className="object-cover w-full h-full opacity-20"
+     />
+</div>
 
       {/* App shell sits on top */}
       <ApplicationShell1

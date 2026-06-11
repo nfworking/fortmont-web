@@ -32,7 +32,7 @@ export function EmailList({
   setSelectedEmail,
 }: EmailListProps) {
   return (
-    <section className="w-80 flex-shrink-0 border-r border-border bg-background flex flex-col h-full overflow-hidden">
+    <section className="w-80 flex-shrink-0 border-r border-border bg-background/60 flex flex-col h-full overflow-hidden">
       <div className="p-4 border-b border-border/60 flex-shrink-0 flex flex-col gap-3">
         <h2 className="text-base font-bold text-foreground capitalize leading-none tracking-tight">
           {activeFolder}

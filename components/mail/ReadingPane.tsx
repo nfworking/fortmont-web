@@ -52,7 +52,7 @@ export function ReadingPane({
   openForwardCompose,
 }: ReadingPaneProps) {
   return (
-    <main className="flex-1 bg-background flex flex-col h-full overflow-hidden">
+    <main className="flex-1 bg-transparent flex flex-col h-full overflow-hidden">
       <div className="flex items-center gap-1.5 px-4 py-2 border-b border-border/60 bg-muted/10 flex-shrink-0 h-12">
         <Button variant="ghost" size="icon" title="Archive" className="size-8 cursor-pointer">
           <Archive className="size-4 text-muted-foreground hover:text-foreground transition-colors" />

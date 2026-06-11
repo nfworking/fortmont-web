@@ -13,7 +13,7 @@ export default function ServerSettingsPage() {
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
           Server settings
-        </h1>
+        </h1> 
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">
           This page is wired up so the sidebar can navigate here. Add your server configuration controls here.
         </p>

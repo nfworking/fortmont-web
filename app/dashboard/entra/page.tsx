@@ -141,7 +141,7 @@ const LoadingRows: React.FC<{ cols?: number; rows?: number }> = ({ cols = 4, row
     {Array.from({ length: rows }).map((_, i) => (
       <TableRow key={i} className="border-border/40">
         {Array.from({ length: cols }).map((_, j) => (
-          <TableCell key={j}><Skeleton className="h-4 w-full bg-muted/40" /></TableCell>
+          <TableCell key={j}><Skeleton className="h-4 w-full " /></TableCell>
         ))}
       </TableRow>
     ))}
@@ -204,7 +204,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title, count, lastFetched
     <div className="flex items-center gap-2">
       <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       {count !== undefined && (
-        <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-medium">{count}</span>
+        <span className="text-xs text-muted-foreground dark:text-muted-foreground/80 px-2 py-0.5 rounded-full font-medium">{count}</span>
       )}
     </div>
     <div className="flex items-center gap-3">
@@ -234,25 +234,25 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title, count, lastFetched
 // ── Shared table wrapper ──────────────────────────────────────────────────────
 
 const DataTable: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="rounded-xl border border-border/60 overflow-hidden bg-card shadow-sm">
+  <div className="rounded-xl border border-border/60 overflow-hidden  shadow-sm">
     <Table>{children}</Table>
   </div>
 );
 
 const Th: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <TableHead className="text-xs text-zinc-500 font-medium bg-zinc-900/50 border-b border-zinc-800 h-9">
+  <TableHead className="text-xs dark:text-white font-medium  border-b border-zinc-800 h-9">
     {children}
   </TableHead>
 );
 
 const Td: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = "" }) => (
-  <TableCell className={`text-sm text-zinc-300 py-3 border-b border-zinc-800/60 ${className}`}>
+  <TableCell className={`text-sm dark:text-white text-black py-3 border-b border-zinc-800/60 ${className}`}>
     {children}
   </TableCell>
 );
 
 const Tr: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <TableRow className="border-zinc-800 hover:bg-zinc-800/40 transition-colors">
+  <TableRow className="border-zinc-800  transition-colors dark:text-white text-black">
     {children}
   </TableRow>
 );
@@ -308,7 +308,7 @@ function EntraUsers() {
         <TableBody>
           {loading ? <LoadingRows cols={6} /> : users.slice(0, 50).map((u, i) => (
             <Tr key={u.id ?? i}>
-              <Td><span className="font-medium text-white">{u.displayName}</span></Td>
+              <Td><span className="font-medium text-black dark:text-white">{u.displayName}</span></Td>
               <Td><span className="font-mono text-xs text-zinc-500 max-w-[200px] block truncate">{u.userPrincipalName}</span></Td>
               <Td className="text-zinc-400">{u.jobTitle ?? "—"}</Td>
               <Td><span className="text-xs text-zinc-400 bg-muted px-2 py-0.5 rounded-full">{u.userType ?? "Member"}</span></Td>
@@ -362,7 +362,7 @@ function EntraGroups() {
         <TableBody>
           {loading ? <LoadingRows cols={5} /> : groups.slice(0, 50).map((g, i) => (
             <Tr key={g.id ?? i}>
-              <Td><span className="font-medium text-white">{g.displayName}</span></Td>
+              <Td><span className="font-medium ext-black dark:text-white">{g.displayName}</span></Td>
               <Td><span className="text-zinc-500 text-xs max-w-[220px] block truncate">{g.description ?? "—"}</span></Td>
               <Td>
                 <div className="flex gap-1 flex-wrap">
@@ -421,7 +421,7 @@ function EntraDevices() {
         <TableBody>
           {loading ? <LoadingRows cols={7} /> : devices.slice(0, 50).map((d, i) => (
             <Tr key={d.id ?? i}>
-              <Td><span className="font-mono text-xs text-white">{d.displayName}</span></Td>
+              <Td><span className="font-mono text-xs ext-black dark:text-white">{d.displayName}</span></Td>
               <Td className="text-zinc-400">{d.operatingSystem ?? "—"}</Td>
               <Td><span className="font-mono text-xs text-zinc-500">{d.operatingSystemVersion ?? "—"}</span></Td>
               <Td><span className="text-xs text-zinc-400 bg-muted px-2 py-0.5 rounded-full">{d.trustType ?? "—"}</span></Td>
@@ -486,7 +486,7 @@ function EntraApps() {
         <TableBody>
           {loading ? <LoadingRows cols={6} /> : apps.slice(0, 50).map((a, i) => (
             <Tr key={a.id ?? i}>
-              <Td><span className="font-medium text-white">{a.displayName}</span></Td>
+              <Td><span className="font-medium text-black dark:text-white">{a.displayName}</span></Td>
               <Td><span className="font-mono text-xs text-zinc-500">{a.appId}</span></Td>
               <Td><span className="text-xs text-zinc-400">{a.signInAudience?.replace("AzureAD", "") ?? "—"}</span></Td>
               <Td><span className="font-mono text-xs text-zinc-300">{a.passwordCredentials?.length ?? 0}</span></Td>
@@ -665,7 +665,7 @@ function AzureSubscriptions() {
         <TableBody>
           {loading ? <LoadingRows cols={6} /> : subs.map((s, i) => (
             <Tr key={s.subscriptionId ?? i}>
-              <Td><span className="font-medium text-white">{s.displayName}</span></Td>
+              <Td><span className="font-medium text-black dark:text-white">{s.displayName}</span></Td>
               <Td><span className="font-mono text-xs text-zinc-500">{s.subscriptionId}</span></Td>
               <Td><span className="font-mono text-xs text-zinc-500">{s.tenantId}</span></Td>
               <Td><span className="text-xs text-zinc-400">{s.subscriptionPolicies?.quotaId ?? "—"}</span></Td>
@@ -712,7 +712,7 @@ function AzureResourceGroups() {
         <TableBody>
           {loading ? <LoadingRows cols={4} /> : groups.map((g, i) => (
             <Tr key={g.id ?? i}>
-              <Td><span className="font-mono text-xs text-white">{g.name}</span></Td>
+              <Td><span className="font-mono text-xs ext-black dark:text-white">{g.name}</span></Td>
               <Td><span className="text-xs text-zinc-400">{g.location}</span></Td>
               <Td><StatusPill value={g.properties?.provisioningState} /></Td>
               <Td>
