@@ -49,7 +49,7 @@ export function SearchCommand({ user }: SearchCommandProps) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 transition-colors w-full max-w-xs"
+        className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 transition-colors w-full max-w-xs justify-center ml-200"
       >
         <Search className="h-4 w-4" />
         <span className="flex-1 text-left">Search docs...</span>
