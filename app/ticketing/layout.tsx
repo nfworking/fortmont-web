@@ -1,3 +1,4 @@
+import { DocsShell } from "@/components/ticketing/docs-shell";
 import { TicketShell } from "@/components/ticketing/ticketShell";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -43,7 +44,15 @@ export default async function DashboardLayout({
 
   return (
     <div className="relative min-h-screen w-full">
-
+<DocsShell
+  user={{
+    username: session?.user?.name,
+    email: session?.user?.email,
+    avatarUrl: session?.user?.image,
+  }}
+>
+  {children}
+</DocsShell>
      
     </div>
   );
