@@ -20,10 +20,10 @@ export const sidebarConfig: SidebarSection[] = [
   {
     title: "Lab Overview",
     items: [
-      { title: "Infrastructure", url: "/docs" },
-      { title: "Network", url: "/docs/quick-start" },
-      { title: "Services", url: "/docs/quick-start" },
-      { title: "Security", url: "/docs/quick-start" },
+      { title: "Infrastructure", url: "/ticketing/kba/how-to-access-fortmont-web" },
+      { title: "Network", url: "/ticketing/kba/network" },
+      { title: "Services", url: "/ticketing/kba/services" },
+      { title: "Security", url: "/ticketing/kba/security" },
     ],
   },
   {
