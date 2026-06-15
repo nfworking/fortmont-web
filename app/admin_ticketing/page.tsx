@@ -1,6 +1,7 @@
-export default function TicketDashboardAdmin() {
+
+import { redirect } from "next/navigation";
+export default function DashboardPage() {
   return (
-    <div className="flex flex-1 flex-col ">
-        </div>
-  );
+    redirect("/admin_ticketing/dashboard")
+  )
 }
