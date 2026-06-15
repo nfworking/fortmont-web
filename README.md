@@ -40,25 +40,17 @@ pnpm run dev
 ### API documentation can be found in the [API Docs](./docs/api_usage.md)
 
 
+### Current Major features and future features
+- Ticket dashboard
+- KBA docs
+- Admin homelab dashboard with different tabs
+- Apps page to show homelab services
+- Login page with device login notifications
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-### Features to implement 
-  - **lxc_ip verification to make sure it exists and updating lxc status if IP returns false**
-  - **Addition of lxc hostname and service url to identify lxc purpose**
-  - **Addition of lxc hardware information and vm host information**
-  - **Automatic updating of service urls and status if in maintence mode or disabled**
+### Features in progress
+- Fully featured ticket dashboard (Current: Im Progress)
+- Central account & profile center for both ticket and main app users (Current: Planning)
+- Added database entry for users with api keys, jobs, workflows, access, roles, etc (Future: Initial Stage)
 
 ### AI usage Information:
 This project was developed by a human developer with assistance from AI tools, primarily GitHub Copilot. The user interface was created using a combination of publicly available design templates, inspiration from the developer's own concepts, and components inspired by Shadcn UI.
