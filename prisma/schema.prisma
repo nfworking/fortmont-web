@@ -12,6 +12,12 @@ datasource db {
   provider = "mysql"
 }
 
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
 
 // DEPRECIATED REMOVE 
 model lxc {
@@ -53,6 +59,8 @@ model AppUsers {
   mailboxes    UserMailbox[]
   deviceTokens DeviceToken[]
   passwordResetTokens PasswordResetToken[]
+  createdTickets  Tickets[] @relation("TicketCreator")
+  assignedTickets Tickets[] @relation("TicketAssignee")
 
 }
 
@@ -123,6 +131,27 @@ model KbArticle {
   content     String   @db.Text
 
   published   Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Tickets {
+  id          String         @id @default(uuid())
+  type        String
+  department  String
+  subject     String
+  description String
+  priority    TicketPriority
+  status      String?
+
+  // who created it
+  createdById String?
+  createdBy   AppUsers? @relation("TicketCreator", fields: [createdById], references: [id])
+
+  // who it's assigned to
+  assignedToId String?
+  assignedTo   AppUsers? @relation("TicketAssignee", fields: [assignedToId], references: [id])
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

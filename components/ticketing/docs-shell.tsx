@@ -6,24 +6,30 @@ import { SidebarNav } from "./sidebar-nav";
 import { SearchCommand } from "./search-command";
 import { UserDropdown } from "./user-dropdown";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Book } from "lucide-react";
+import { Menu, X, Book, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DocsShellProps {
   children: React.ReactNode;
-  user?: {
-    username: string;
-    email: string;
-    avatarUrl: string;
-  } | null;
+
+  user: {
+    username?: string ;
+    email?: string ;
+    avatarUrl?: string ;
+  };
+
+  articles: {
+    title: string;
+    slug: string;
+  }[];
 }
 
-export function DocsShell({ children, user }: DocsShellProps) {
+export function DocsShell({ children, user, articles }: DocsShellProps) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Mobile sidebar backdrop */}
+    <div className="min-h-screen bg-background flex">
+      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
@@ -34,15 +40,17 @@ export function DocsShell({ children, user }: DocsShellProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 z-50 h-full w-64 border-r bg-background transition-transform duration-300 lg:translate-x-0",
+          "fixed top-0 left-0 z-50 h-full w-64 border-r bg-background transition-transform duration-300 lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-16 items-center justify-between border-b px-4 ml-3">
+        {/* Top bar */}
+        <div className="flex h-16 items-center justify-between border-b px-4">
           <Link href="/" className="flex items-center gap-2">
-            <Book/>
+            <Book className="h-5 w-5" />
             <span className="font-semibold">Fortmont KBA</span>
           </Link>
+
           <Button
             variant="ghost"
             size="icon"
@@ -52,14 +60,27 @@ export function DocsShell({ children, user }: DocsShellProps) {
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <SidebarNav />
+
+        {/* Sidebar nav */}
+        <SidebarNav articles={articles} />
+
+        {/* Extra link */}
+        <div className="px-2 mt-2">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
+          >
+            <LayoutDashboard className="h-4 w-4" />
+            Dashboard
+          </Link>
+        </div>
       </aside>
 
-      {/* Main content area */}
-      <div className="">
+      {/* Main area */}
+      <div className="flex-1 lg:ml-64">
         {/* Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex flex-1 items-center gap-4 px-4">
+        <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-background/95 backdrop-blur">
+          <div className="flex flex-1 items-center gap-4 px-4 ">
             <Button
               variant="ghost"
               size="icon"
@@ -68,15 +89,17 @@ export function DocsShell({ children, user }: DocsShellProps) {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <SearchCommand user={user} />
+
+            <SearchCommand  articles={articles} />
           </div>
+
           <div className="flex items-center gap-2 px-4">
             <UserDropdown user={user} />
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-6 lg:p-8">{children}</main>
+        <main className="p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

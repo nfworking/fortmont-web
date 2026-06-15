@@ -20,17 +20,17 @@ import {
   Moon,
   Sun,
 } from "lucide-react";
-
+import { signOut } from "next-auth/react";
 interface UserDropdownProps {
   user?: {
-    username: string;
-    email: string;
-    avatarUrl: string;
+    username: string | undefined;
+    email: string | undefined;
+    avatarUrl: string | undefined;
   } | null;
-  onSignOut?: () => void;
+
 }
 
-export function UserDropdown({ user, onSignOut }: UserDropdownProps) {
+export function UserDropdown({ user}: UserDropdownProps) {
   const [isDark, setIsDark] = React.useState(false);
 
   React.useEffect(() => {
@@ -51,14 +51,16 @@ export function UserDropdown({ user, onSignOut }: UserDropdownProps) {
   }
 
   const initials = user.username
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+    ? user.username
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : undefined;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu >
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
@@ -108,7 +110,7 @@ export function UserDropdown({ user, onSignOut }: UserDropdownProps) {
           )}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onSignOut}>
+        <DropdownMenuItem onClick={() => signOut()}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sign out</span>
         </DropdownMenuItem>

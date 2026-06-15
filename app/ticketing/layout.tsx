@@ -13,16 +13,26 @@ export default async function DashboardLayout({
   const session = await auth();
   const sessionUser = session?.user as
     | {
-        id?: string | null;
-        name?: string | null;
-        email?: string | null;
-        image?: string | null;
+        id?: string ;
+        name?: string ;
+        email?: string ;
+        image?: string ;
       }
     | undefined;
 
   const userId = sessionUser?.id?.trim() ?? undefined;
   const email = session?.user?.email?.trim().toLowerCase();
   const username = session?.user?.name?.trim().toLowerCase();
+
+  const articles = await prisma.kbArticle.findMany({
+  orderBy: {
+    createdAt: "desc",
+  },
+  select: {
+    title: true,
+    slug: true,
+  },
+});
 
   const user =
     userId || email || username
@@ -46,10 +56,11 @@ export default async function DashboardLayout({
     <div className="relative min-h-screen w-full">
 <DocsShell
   user={{
-    username: session?.user?.name,
-    email: session?.user?.email,
-    avatarUrl: session?.user?.image,
+    username: session?.user?.name ?? undefined,
+    email: session?.user?.email ?? undefined,
+    avatarUrl: session?.user?.image ?? undefined,
   }}
+  articles={articles}
 >
   {children}
 </DocsShell>
