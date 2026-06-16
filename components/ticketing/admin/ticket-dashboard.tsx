@@ -1,14 +1,14 @@
 'use client';
 import * as React from 'react';
 import { format } from 'date-fns';
-import { LayoutGrid, List, Loader2, Plus, RefreshCw, UserRound } from 'lucide-react';
+import { LayoutGrid, List, Loader2, MessageSquare, Plus, RefreshCw, Send, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { StatsCards } from './stats-cards';
 import { TicketList } from './ticket-list';
 import { TicketFilters, FilterState } from './ticket-filters';
-import { Ticket, TicketPriority, TicketStatus, User } from './ticket';
+import { Comment, Ticket, TicketPriority, TicketStatus, User } from './ticket';
 import {
   Sheet,
   SheetContent,
@@ -153,16 +153,129 @@ function UserSummary({ user, fallback }: { user: User | null; fallback: string }
   );
 }
 
+function formatCommentTime(dateString: string) {
+  const date = new Date(dateString);
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.round(diffMs / 60000);
+
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.round(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.round(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}d ago`;
+
+  return format(date, 'PP');
+}
+
+function CommentItem({ comment, users }: { comment: Comment; users: User[] }) {
+  const resolvedAuthor = comment.author ?? users.find((user) => user.id === comment.authorId) ?? null;
+  const name = displayName(resolvedAuthor, 'Unknown user');
+
+  return (
+    <div className="flex gap-2.5">
+      <Avatar className={cn('h-8 w-8 shrink-0', !resolvedAuthor && 'opacity-60')}>
+        {resolvedAuthor?.avatarUrl && <AvatarImage src={resolvedAuthor.avatarUrl} alt={name} />}
+        <AvatarFallback>{initials(name)}</AvatarFallback>
+      </Avatar>
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex items-baseline gap-2">
+          <span className="truncate text-sm font-medium">{name}</span>
+          <span className="shrink-0 text-xs text-muted-foreground">
+            {formatCommentTime(comment.createdAt)}
+          </span>
+        </div>
+        <p className="whitespace-pre-wrap rounded-lg border bg-muted/30 p-2.5 text-sm leading-6">
+          {comment.text}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function CommentsSection({
+  ticket,
+  users,
+  isSubmitting,
+  onAddComment,
+}: {
+  ticket: Ticket;
+  users: User[];
+  isSubmitting: boolean;
+  onAddComment: (ticket: Ticket, text: string) => Promise<void>;
+}) {
+  const [draft, setDraft] = React.useState('');
+  const comments = ticket.comments ?? [];
+  const sortedComments = React.useMemo(
+    () => [...comments].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
+    [comments]
+  );
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const text = draft.trim();
+    if (!text) return;
+
+    await onAddComment(ticket, text);
+    setDraft('');
+  };
+
+  return (
+    <section className="space-y-3">
+      <h3 className="flex items-center gap-1.5 text-sm font-medium">
+        <MessageSquare className="h-4 w-4" />
+        Comments
+        {sortedComments.length > 0 && (
+          <span className="text-xs font-normal text-muted-foreground">({sortedComments.length})</span>
+        )}
+      </h3>
+
+      {sortedComments.length > 0 ? (
+        <div className="space-y-4">
+          {sortedComments.map((comment) => (
+            <CommentItem key={comment.id} comment={comment} users={users} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">No comments yet.</p>
+      )}
+
+      <form onSubmit={handleSubmit} className="flex gap-2 pt-1">
+        <Textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder="Add a comment..."
+          className="min-h-10 flex-1 resize-none"
+          disabled={isSubmitting}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              handleSubmit(event);
+            }
+          }}
+        />
+        <Button type="submit" size="icon" disabled={isSubmitting || !draft.trim()}>
+          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        </Button>
+      </form>
+    </section>
+  );
+}
+
 function TicketDetailSheet({
   ticket,
   users,
+  isSubmittingComment,
   onOpenChange,
   onUpdate,
+  onAddComment,
 }: {
   ticket: Ticket | null;
   users: User[];
+  isSubmittingComment: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate: (ticket: Ticket, updates: Partial<Ticket>) => void;
+  onAddComment: (ticket: Ticket, text: string) => Promise<void>;
 }) {
   if (!ticket) {
     return null;
@@ -274,6 +387,15 @@ function TicketDetailSheet({
             <DetailRow label="Updated" value={format(new Date(ticket.updatedAt), 'PPpp')} />
             <DetailRow label="Ticket ID" value={<span className="font-mono text-xs">{ticket.id}</span>} />
           </section>
+
+          <Separator />
+
+          <CommentsSection
+            ticket={ticket}
+            users={users}
+            isSubmitting={isSubmittingComment}
+            onAddComment={onAddComment}
+          />
         </div>
       </SheetContent>
     </Sheet>
@@ -520,6 +642,7 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
   const [activeTab, setActiveTab] = React.useState('all');
   const [selectedTicketId, setSelectedTicketId] = React.useState<string | null>(null);
   const [viewMode, setViewMode] = React.useState<'list' | 'grid'>('list');
+  const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
 
   const stats = React.useMemo(() => calculateStats(ticketRows), [ticketRows]);
   const users = React.useMemo(() => {
@@ -646,6 +769,35 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
     }
   };
 
+  const handleAddComment = async (ticket: Ticket, text: string) => {
+    setIsSubmittingComment(true);
+
+    try {
+      const res = await fetch(`/api/ticketing/post/ticket/${ticket.id}/comments`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!res.ok) throw new Error(`Comment failed with ${res.status}`);
+
+      const newComment: Comment = await res.json();
+      setTicketRows((currentRows) =>
+        currentRows.map((row) =>
+          row.id === ticket.id
+            ? { ...row, comments: [...(row.comments ?? []), newComment] }
+            : row
+        )
+      );
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
   const handleTicketCreate = async (form: CreateTicketFormState) => {
     setIsCreatingTicket(true);
 
@@ -755,10 +907,12 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
       <TicketDetailSheet
         ticket={selectedTicket}
         users={users}
+        isSubmittingComment={isSubmittingComment}
         onOpenChange={(open) => {
           if (!open) setSelectedTicketId(null);
         }}
         onUpdate={handleTicketUpdate}
+        onAddComment={handleAddComment}
       />
       <CreateTicketDialog
         open={isCreateDialogOpen}

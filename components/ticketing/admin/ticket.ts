@@ -17,6 +17,16 @@ export interface User {
 export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 export type TicketStatus = 'open' | 'in_progress' | 'pending' | 'resolved' | 'closed';
 
+export interface Comment {
+  id: string;
+  text: string;
+  ticketId: string;
+  authorId: string;
+  createdAt: string;
+  updatedAt: string;
+  author?: User | null;
+}
+
 export interface Ticket {
   id: string;
   type: string;
@@ -31,4 +41,5 @@ export interface Ticket {
   updatedAt: string;
   createdBy: User | null;
   assignedTo: User | null;
+  comments?: Comment[];
 }
