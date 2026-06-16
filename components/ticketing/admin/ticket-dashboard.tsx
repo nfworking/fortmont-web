@@ -660,10 +660,62 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
       displayName(a, '').localeCompare(displayName(b, ''))
     );
   }, [initialUsers, ticketRows]);
+  
   const selectedTicket = React.useMemo(
     () => ticketRows.find((ticket) => ticket.id === selectedTicketId) ?? null,
     [selectedTicketId, ticketRows]
   );
+
+  // 🔥 REAL-TIME NOTIFICATIONS EFFECT HOOK
+  // 🔥 REAL-TIME NOTIFICATIONS EFFECT HOOK
+  React.useEffect(() => {
+    if (!selectedTicketId) return;
+
+    // Open connection to the dynamic streaming server endpoint
+    const eventSource = new EventSource(`/api/ticketing/stream/tickets/${selectedTicketId}/stream`);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const parsedData = JSON.parse(event.data);
+
+        // Ignore the initial server pipeline verification packet
+        if (parsedData?.status === 'connected') {
+          console.log('Real-time notification pipeline connected successfully.');
+          return;
+        }
+
+        const newComment: Comment = parsedData;
+
+        setTicketRows((currentRows) =>
+          currentRows.map((row) => {
+            if (row.id !== selectedTicketId) return row;
+
+            // Safeguard against duplicate comments if the current user authored it
+            const commentExists = row.comments?.some((c) => c.id === newComment.id);
+            if (commentExists) return row;
+
+            return {
+              ...row,
+              comments: [...(row.comments ?? []), newComment],
+            };
+          })
+        );
+      } catch (err) {
+        console.error('Failed to parse incoming streaming comment payload:', err);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      // Browsers naturally drop and reconnect streams during inactive tabs.
+      // This log becomes a warning instead of a fatal terminal sequence.
+      console.warn('Real-time connection dropped. Retrying sync pipeline background loop...', err);
+    };
+
+    // Clean up connection instantly when shifting tickets or closing details panel
+    return () => {
+      eventSource.close();
+    };
+  }, [selectedTicketId]);
 
   const filteredTickets = React.useMemo(() => {
     let result = [...ticketRows];
@@ -783,12 +835,20 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
       if (!res.ok) throw new Error(`Comment failed with ${res.status}`);
 
       const newComment: Comment = await res.json();
+      
       setTicketRows((currentRows) =>
-        currentRows.map((row) =>
-          row.id === ticket.id
-            ? { ...row, comments: [...(row.comments ?? []), newComment] }
-            : row
-        )
+        currentRows.map((row) => {
+          if (row.id !== ticket.id) return row;
+
+          // 🔥 FIX: Prevent adding the comment if the Redis stream beat the fetch request to the state
+          const commentExists = row.comments?.some((c) => c.id === newComment.id);
+          if (commentExists) return row;
+
+          return { 
+            ...row, 
+            comments: [...(row.comments ?? []), newComment] 
+          };
+        })
       );
     } catch (error) {
       console.error(error);

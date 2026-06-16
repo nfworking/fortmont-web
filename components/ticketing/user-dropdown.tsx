@@ -23,9 +23,9 @@ import {
 import { signOut } from "next-auth/react";
 interface UserDropdownProps {
   user?: {
-    username: string | undefined;
-    email: string | undefined;
-    avatarUrl: string | undefined;
+    username?: string | undefined;
+    email?: string | undefined;
+    avatarUrl?: string | undefined;
   } | null;
 
 }

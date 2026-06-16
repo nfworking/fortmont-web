@@ -94,7 +94,7 @@ export function DocsShell({ children, user, articles }: DocsShellProps) {
           </div>
 
           <div className="flex items-center gap-2 px-4">
-            <UserDropdown user={user} />
+            <UserDropdown user={user || null} />
           </div>
         </header>
 
