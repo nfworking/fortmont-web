@@ -1,12 +1,12 @@
-
 import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import { authConfig } from "@/lib/auth.config";
 
 const { auth } = NextAuth(authConfig);
 
-
-const publicRoutes = ["/apps", "/forgot-password", "/reset-password", "/onboard", "/api/ticketing/get/ticket"];
+// Added common public frontend routes here. 
+// No need to list "/api/..." routes here anymore!
+const publicRoutes = ["/apps", "/forgot-password", "/reset-password", "/onboard"];
 const authPages = ["/login", "/login_webmail", "/signup"];
 
 export default auth((req) => {
@@ -18,10 +18,10 @@ export default auth((req) => {
     isOnboarded?: boolean;
   })?.isOnboarded;
 
-  const isPublicRoute = publicRoutes.some(
-    (route) =>
-      pathname === route || pathname.startsWith(route + "/")
-  );
+  // 1. Check if it's an API route OR listed in public frontend routes
+  const isPublicRoute = 
+    pathname.startsWith("/api") || 
+    publicRoutes.some((route) => pathname === route || pathname.startsWith(route + "/"));
 
   const isAuthPage = authPages.some(
     (route) =>
@@ -32,7 +32,7 @@ export default auth((req) => {
     pathname === "/onboard/user" ||
     pathname.startsWith("/onboard/");
 
-  // Allow public routes
+  // Allow all API routes and public frontend routes globally
   if (isPublicRoute) {
     return NextResponse.next();
   }
@@ -98,8 +98,8 @@ export default auth((req) => {
 });
 
 export const config = {
+  // Balanced matcher to catch all standard pages while ignoring static assets
   matcher: [
-    "/((?!api/auth|_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
-
