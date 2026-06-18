@@ -83,6 +83,21 @@ async function sendLoginNotification(userId: string, provider: "credentials" | "
   }
 }
 
+async function updateLastLogin(userId: string) {
+  try {
+    await prisma.appUsers.update({
+      where: { id: userId },
+      data: {
+        lastLoggedIn: new Date(),
+      },
+    });
+
+    log(`Updated lastLoggedIn for user ${userId}`);
+  } catch (err) {
+    logError(`Failed to update lastLoggedIn for user ${userId}`, err);
+  }
+}
+
 // ─── Entra profile sync ────────────────────────────────────────────────────────
 
 function normalizeNullableString(value: unknown): string | null | undefined {
@@ -218,7 +233,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const syncedUser = await syncEntraUser(profile as Record<string, unknown> | undefined);
         log(`Entra sync result: ${syncedUser ? `id=${syncedUser.id}` : "null"}`);
 
-        if (syncedUser) {
+
+        if (syncedUser) { 
+          updateLastLogin(syncedUser.id).catch((err) =>
+          logError("Failed updating last login (entra)", err),
+           );
           token.sub = syncedUser.id;
           token.name = syncedUser.displayName ?? syncedUser.username;
           token.email = syncedUser.email ?? token.email;
@@ -235,28 +254,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           sendLoginNotification(syncedUser.id, "entra").catch((err) =>
             logError("Background notification failed (entra)", err),
           );
-        }
+          
+         }
+ 
 
         return token;
       }
 
       if (user?.id) {
-        log(`JWT callback — credentials login, enriching token for user ${user.id}`);
-        const appUser = await prisma.appUsers.findUnique({ where: { id: user.id } });
+  log(`JWT callback — credentials login, enriching token for user ${user.id}`);
+  const appUser = await prisma.appUsers.findUnique({ where: { id: user.id } });
 
-        if (appUser) {
-          token.sub = appUser.id;
-          token.name = appUser.displayName ?? appUser.username;
-          token.email = appUser.email ?? token.email;
-          token.username = appUser.username;
-          token.role = appUser.role;
-          token.phone = appUser.phone;
-          token.avatarUrl = appUser.avatarUrl;
-          token.isActive = appUser.isActive;
-          token.isEntraUser = appUser.isEntraUser;
-          token.isOnboarded = appUser.onboarded; // Example of adding a custom claim
-        }
-      }
+  if (appUser) {
+    updateLastLogin(appUser.id).catch((err) =>
+      logError("Failed updating last login (credentials)", err),
+    );
+
+    token.sub = appUser.id;
+    token.name = appUser.displayName ?? appUser.username;
+    token.email = appUser.email ?? token.email;
+    token.username = appUser.username;
+    token.role = appUser.role;
+    token.phone = appUser.phone;
+    token.avatarUrl = appUser.avatarUrl;
+    token.isActive = appUser.isActive;
+    token.isEntraUser = appUser.isEntraUser;
+    token.isOnboarded = appUser.onboarded;
+  }
+}
 
       return token;
     },

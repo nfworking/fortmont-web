@@ -57,7 +57,7 @@ export default async function DashboardLayout({
 </div>
 
       {/* App shell sits on top */}
-      <ApplicationShell1
+      <ApplicationShell1 
         user={
           user
             ? {

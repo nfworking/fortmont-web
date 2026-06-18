@@ -106,6 +106,18 @@ export async function POST(request: NextRequest) {
     return createLoginError("Invalid username/email or password", 401);
   }
 
+  log(`Updating lastLoggedIn for user: ${user.id}`);
+
+await prisma.appUsers.update({
+  where: {
+    id: user.id,
+  },
+  data: {
+    lastLoggedIn: new Date(),
+  },
+});
+
+
   log(`Encoding JWT token for user: ${user.id}`);
   const token = await encode({
     secret: process.env.AUTH_SECRET,

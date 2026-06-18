@@ -10,7 +10,7 @@ export function DnsRecordsTable({ records }: Props) {
   return (
     <div className="overflow-hidden rounded-xl border border-border/60">
       <table className="min-w-full table-auto">
-        <thead className="bg-muted/50">
+        <thead className="bg-background/40 ">
           <tr>
             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Name

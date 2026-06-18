@@ -32,6 +32,7 @@ model AppUsers {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   onboarded    Boolean?  @default(false)
+  lastLoggedIn DateTime  @default(now())
 
   // RELATIONS
   mailboxes           UserMailbox[]

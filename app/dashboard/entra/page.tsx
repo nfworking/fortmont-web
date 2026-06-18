@@ -943,10 +943,28 @@ const AZURE_TABS: TabConfig[] = [
 
 export default function EntraAzureDashboard() {
   return (
+    
     <TooltipProvider>
-      <div className="bg-background text-foreground p-4 md:p-6 flex flex-col gap-6">
+      <div className="bg-background/35 backdrop-blur text-foreground p-4 md:p-6 flex flex-col gap-6 rounded-lg">
         <Tabs defaultValue="entra" className="space-y-6">
-
+         <section className="rounded-2xl border border-border/60 bg-background/0  p-6 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-2">
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">
+              FortmontAPI
+            </p>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+              Certificate overview
+            </h1>
+            <p className="max-w-2xl text-sm text-muted-foreground md:text-base">
+              Certificates pulled from the /api/proxy/certs endpoint.
+            </p>
+          </div>
+          <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+           
+          </span>
+        </div>
+      </section>
           {/* Cloud selector */}
           <TabsList className="w-fit">
             <TabsTrigger value="entra" className="gap-2">

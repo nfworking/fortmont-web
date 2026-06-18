@@ -23,12 +23,9 @@ export function NavMain({
   const pathname = usePathname()
 
   return (
-    <SidebarGroup>
-      <SidebarGroupContent className="flex flex-col gap-2">
-        <SidebarMenu>
-          
-        </SidebarMenu>
-        <SidebarMenu>
+    <SidebarGroup >
+      <SidebarGroupContent className="flex flex-col gap-2 ">
+        <SidebarMenu >
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton

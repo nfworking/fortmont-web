@@ -3,11 +3,18 @@ import { redirect } from "next/navigation";
 import { AccountSettingsForm } from "@/components/account-settings-form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
+import { SeparatorVertical } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Fortmont Account",
@@ -44,8 +51,8 @@ export default async function AccountPage() {
     name?: string | null;
     email?: string | null;
     image?: string | null;
-    username?: string | null;   // set by your jwt callback if available
-    sub?: string | null;        // raw JWT subject — often the user id
+    username?: string | null; // set by your jwt callback if available
+    sub?: string | null; // raw JWT subject — often the user id
   };
 
   // Build the lookup candidates — prefer id, fall back to email only.
@@ -56,10 +63,7 @@ export default async function AccountPage() {
 
   const user = await prisma.appUsers.findFirst({
     where: {
-      OR: [
-        ...(userId ? [{ id: userId }] : []),
-        ...(email ? [{ email }] : []),
-      ],
+      OR: [...(userId ? [{ id: userId }] : []), ...(email ? [{ email }] : [])],
     },
     select: {
       id: true,
@@ -73,6 +77,7 @@ export default async function AccountPage() {
       isActive: true,
       createdAt: true,
       updatedAt: true,
+      lastLoggedIn: true,
       mailboxes: {
         select: {
           id: true,
@@ -81,21 +86,43 @@ export default async function AccountPage() {
           provider: true,
         },
       },
+      deviceTokens: {
+        select: {
+          id: true,
+          platform: true,
+          deviceName: true,
+          deviceModelName: true,
+          deviceBrand: true,
+        },
+      },
+      teams: {
+        select: {
+          name: true,
+          description: true,
+        },
+      },
     },
   });
 
   const accountType = user?.isEntraUser ? "Microsoft Entra" : "Local account";
   const roleLabel = user?.role ?? "No role set";
+  const deviceBrand = (
+    user?.deviceTokens?.[0]?.deviceBrand ?? "No device brand set"
+  )
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
   const initials = getInitials(
     user?.displayName ?? user?.username ?? user?.email ?? sessionUser.name,
   );
 
-  const primaryMailbox = user?.mailboxes?.find((m) => m.isPrimary) ?? user?.mailboxes?.[0];
+  const primaryMailbox =
+    user?.mailboxes?.find((m) => m.isPrimary) ?? user?.mailboxes?.[0];
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
       {/* Page header */}
-      <section className="rounded-2xl border border-border/60 bg-black transition-all duration-300 blurred:bg-transparent blurred:backdrop-blur p-6 shadow-sm">
+      <section className="rounded-2xl border border-border/60 transition-all duration-300 bg-transparent backdrop-blur p-6 shadow-sm">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-4">
             <div className="space-y-2">
@@ -106,7 +133,8 @@ export default async function AccountPage() {
                 Your profile
               </h1>
               <p className="max-w-2xl text-sm text-muted-foreground md:text-base">
-                Review and update the profile data stored in the database for your signed-in account.
+                Review and update the profile data stored in the database for
+                your signed-in account.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -118,17 +146,22 @@ export default async function AccountPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 rounded-2xl border border-border/60 bg-black transition-all duration-300 blurred:bg-transparent blurred:backdrop-blur p-4 shadow-sm ">
+          <div className="flex items-center gap-4 rounded-2xl border border-border/60 transition-all duration-300 bg-transparent backdrop-blur p-4 shadow-sm ">
             <Avatar className="h-16 w-16 rounded-2xl">
               <AvatarImage
                 src={user?.avatarUrl ?? undefined}
                 alt={user?.displayName ?? user?.username ?? "Account"}
               />
-              <AvatarFallback className="rounded-2xl text-lg">{initials || "U"}</AvatarFallback>
+              <AvatarFallback className="rounded-2xl text-lg">
+                {initials || "U"}
+              </AvatarFallback>
             </Avatar>
             <div className="space-y-1">
               <p className="text-base font-semibold text-foreground">
-                {user?.displayName ?? user?.username ?? sessionUser.name ?? "Account"}
+                {user?.displayName ??
+                  user?.username ??
+                  sessionUser.name ??
+                  "Account"}
               </p>
               <p className="text-sm text-muted-foreground">
                 {user?.email ?? sessionUser.email ?? "No email on file"}
@@ -145,11 +178,12 @@ export default async function AccountPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)]">
         {/* Edit form */}
-        <Card className=" bg-black transition-all duration-300 blurred:bg-transparent blurred:backdrop-blur">
+        <Card className="  transition-all duration-300 bg-transparent backdrop-blur">
           <CardHeader>
             <CardTitle>Edit profile</CardTitle>
             <CardDescription>
-              These are the profile fields that can be updated from your account page.
+              These are the profile fields that can be updated from your account
+              page.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -166,7 +200,10 @@ export default async function AccountPage() {
               />
             ) : (
               <div className="space-y-3 text-sm text-muted-foreground">
-                <p>We could not find a matching database account for the current session.</p>
+                <p>
+                  We could not find a matching database account for the current
+                  session.
+                </p>
                 <p>
                   Session identity used for lookup:{" "}
                   <span className="font-mono text-foreground">
@@ -174,8 +211,9 @@ export default async function AccountPage() {
                   </span>
                 </p>
                 <p>
-                  If this is an Entra login, make sure the account exists in AppUsers and that
-                  the session email or id matches the stored record.
+                  If this is an Entra login, make sure the account exists in
+                  AppUsers and that the session email or id matches the stored
+                  record.
                 </p>
               </div>
             )}
@@ -184,10 +222,12 @@ export default async function AccountPage() {
 
         {/* Sidebar */}
         <div className="space-y-6 background-transparent">
-          <Card className=" bg-black transition-all duration-300 blurred:bg-transparent blurred:backdrop-blur">
+          <Card className="  transition-all duration-300 bg-transparent backdrop-blur">
             <CardHeader>
               <CardTitle>Account details</CardTitle>
-              <CardDescription>Read-only identity and lifecycle data.</CardDescription>
+              <CardDescription>
+                Read-only identity and lifecycle data.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm background-transparent">
               {user ? (
@@ -242,30 +282,51 @@ export default async function AccountPage() {
 
               {user && (
                 <>
-                  <DetailRow label="Created" value={formatDate(user.createdAt)} />
-                  <DetailRow label="Updated" value={formatDate(user.updatedAt)} />
+                  <DetailRow
+                    label="Created"
+                    value={formatDate(user.createdAt)}
+                  />
+                  <DetailRow
+                    label="Last login"
+                    value={user.lastLoggedIn ? formatDate(user.lastLoggedIn) : "Never"}
+                  />
                 </>
               )}
-            </CardContent>
-          </Card>
 
-          <Card className=" bg-black transition-all duration-300 blurred:bg-transparent blurred:backdrop-blur">
-            <CardHeader>
-              <CardTitle>Security notes</CardTitle>
-              <CardDescription>
-                What this account is tied to in the authentication layer.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p>
-                {user?.isEntraUser
-                  ? "This account is marked as an Entra user and its identity can be reconciled with Microsoft sign-in data."
-                  : "This is a local application account authenticated with the stored password hash."}
-              </p>
-              <p>
-                Password hashes are not exposed here. If the password needs to be changed, use
-                the dedicated reset flow or admin tools.
-              </p>
+              <Separator />
+              <DetailRow
+                label="Devices"
+                value={
+                  user?.deviceTokens?.length
+                    ? `${user.deviceTokens.length} linked`
+                    : "None"
+                }
+              />
+              <DetailRow label="Device Brand" value={deviceBrand} />
+              <DetailRow
+                label="Device Model"
+                value={
+                  user?.deviceTokens?.[0]?.deviceModelName ??
+                  "No device model set"
+                }
+              />
+              <Separator />
+              <DetailRow
+                label="Teams"
+                value={
+                  user?.teams?.length ? `${user.teams.length} joined` : "None"
+                }
+              />
+              <DetailRow
+                label="Team names"
+                value={
+                  user?.teams?.length
+                    ? user.teams
+                        .map((t) => `${t.name}: ${t.description}`)
+                        .join(", ")
+                    : "No teams joined"
+                }
+              />
             </CardContent>
           </Card>
         </div>
@@ -274,7 +335,13 @@ export default async function AccountPage() {
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: string | null | undefined }) {
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null | undefined;
+}) {
   return (
     <div className="flex items-start justify-between gap-4">
       <span className="shrink-0 text-muted-foreground">{label}</span>

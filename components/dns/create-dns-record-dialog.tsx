@@ -114,12 +114,15 @@ export function CreateDnsRecordDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="
-          max-w-lg
-          p-0
-          overflow-hidden
-          rounded-3xl
-          bg-background/95
-          backdrop-blur-xl
+          w-[95vw] 
+    sm:w-[85vw] 
+    md:max-w-[800px]!
+    lg:max-w-[1000px]!
+    p-0
+    overflow-hidden
+    rounded-3xl
+    bg-background/35
+    backdrop-blur-xl
         "
       >
         <form onSubmit={handleSubmit}>

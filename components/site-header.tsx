@@ -3,7 +3,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 
 import { ThemeToggle } from "@/components/theme-toggle"
 import {NotificationPanel} from "@/components/notificationUi"
-import {BlurToggleButton} from "@/components/blur-toggle"
+
 
 type SiteHeaderProps = {
   title?: string
@@ -22,7 +22,7 @@ export function SiteHeader({ title = "LXC and registry information" }: SiteHeade
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
           <NotificationPanel />
-          <BlurToggleButton />
+          
         </div>
       </div>
     </header>
