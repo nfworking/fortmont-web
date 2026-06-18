@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { TicketPriority } from "@/app/generated/prisma/enums";
 import { sendEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
+import { sendNotification } from "@/lib/sendNotification";
+import { sendUserNotification } from "@/lib/sendDeviceNotification";
 
 function escapeHtml(value: string) {
   return value
@@ -44,7 +46,7 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-
+  
   const ticket = await prisma.tickets.create({
     data: {
       type,
@@ -110,6 +112,31 @@ export async function POST(req: Request) {
       console.error("Failed to send ticket assignment email", error);
     }
   }
+
+  const notificationTitle = `New ticket assigned: ${ticket.subject}`;
+  const notificationDescription = ` Priority: ${ticket.priority}, Type: ${ticket.type}, Department: ${ticket.department}`;
+
+  try {
+    await sendNotification({
+      userId: ticket.assignedToId!,
+      type: ticket.department,
+      title: notificationTitle,
+      description: notificationDescription,
+    });
+  } catch (error) {
+    console.error("Failed to send ticket assignment notification", error);
+  }
+
+    try {
+      await sendUserNotification({
+        userId: ticket.assignedToId!,
+        title: notificationTitle,
+        body: notificationDescription,
+      });
+    }
+    catch (error) {
+      console.error("Failed to send device notification for ticket assignment", error);
+    }
 
   return NextResponse.json(ticket);
 }

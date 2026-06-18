@@ -1,24 +1,26 @@
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function POST(
   req: Request,
-  { params }: { params: Promise<{ userId: string }> }
+ 
 ) {
-  const { userId } = await params;
+
+  try {
+      const session = await auth();
+  
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
 
   const body = await req.json();
 
   // optional safety check (highly recommended)
-  if (!userId) {
-    return NextResponse.json(
-      { error: "Missing userId" },
-      { status: 400 }
-    );
-  }
-
+  
   const user = await prisma.appUsers.findUnique({
-    where: { id: userId },
+    where: { id: session.user.id },
   });
 
   if (!user) {
@@ -39,4 +41,12 @@ export async function POST(
   });
 
   return NextResponse.json(notification);
+}
+catch (error) {
+  console.error("Error creating notification:", error);
+  return NextResponse.json(
+    { error: "Failed to create notification" },
+    { status: 500 }
+  );
+}
 }
