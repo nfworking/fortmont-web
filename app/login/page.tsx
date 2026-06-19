@@ -1,6 +1,6 @@
 import { LoginForm } from "@/components/login-form";
-import { Globe } from "lucide-react";
 import { Metadata } from "next";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Fortmont Web Login",
@@ -29,11 +29,11 @@ export default async function LoginPage({
       <div className="relative z-10 flex min-h-svh items-center justify-center p-6">
         <div className="w-full max-w-md space-y-6">
           <div className="flex justify-center">
-            <a href="#" className="flex items-center gap-2 font-medium text-white">
-              <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                <Globe className="size-4" />
+            <a href="#" className="flex items-center gap-2 font-medium ">
+              <div className="flex size-8 items-center justify-center rounded-md ">
+                <Image src="/favicon.ico" alt="Fortmont Web Logo" width={32} height={32} />
               </div>
-              Fortmont Web
+              ortmont Web
             </a>
           </div>
          <div className="rounded-xl border bg-background/80 backdrop-blur-md p-6 shadow-xl">

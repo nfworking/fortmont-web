@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-
 import { AccountSettingsForm } from "@/components/account-settings-form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +13,6 @@ import { Separator } from "@/components/ui/separator";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
-import { SeparatorVertical } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Fortmont Account",
@@ -99,6 +97,15 @@ export default async function AccountPage() {
         select: {
           name: true,
           description: true,
+        },
+      },
+      githubLink: {
+        select: {
+          username: true,
+          profileUrl: true,
+          avatarUrl: true,
+          scope: true,
+          linkedAt: true,
         },
       },
     },
@@ -238,9 +245,7 @@ export default async function AccountPage() {
               ) : (
                 <DetailRow label="Account link" value="No database match yet" />
               )}
-
               <Separator />
-
               <DetailRow
                 label="Display name"
                 value={user?.displayName ?? sessionUser.name ?? "Not set"}
@@ -250,9 +255,7 @@ export default async function AccountPage() {
                 value={user?.email ?? sessionUser.email ?? "Not set"}
               />
               <DetailRow label="Phone" value={user?.phone ?? "Not set"} />
-
               <Separator />
-
               <DetailRow
                 label="Primary mailbox"
                 value={primaryMailbox?.email ?? "No mailbox provisioned"}
@@ -265,9 +268,28 @@ export default async function AccountPage() {
                     : "None"
                 }
               />
-
               <Separator />
-
+              <>
+                <DetailRow
+                  label="Github Accounts Linked"
+                  value={
+                    user?.githubLink ? "1 account linked" : "No accounts linked"
+                  }
+                />
+                <DetailRow
+                  label="Github Username"
+                  value={user?.githubLink?.[0]?.username ?? "Not set"}
+                />
+                <DetailRow
+                  label="Github Linked At"
+                  value={
+                    user?.githubLink?.[0]?.linkedAt
+                      ? formatDate(user.githubLink[0].linkedAt)
+                      : "Not set"
+                  }
+                />{" "}
+              </>{" "}
+              <Separator />
               <DetailRow label="Role" value={user?.role ?? "Not set"} />
               <DetailRow
                 label="Account type"
@@ -277,9 +299,7 @@ export default async function AccountPage() {
                 label="Status"
                 value={user?.isActive ? "Active" : "Pending"}
               />
-
               <Separator />
-
               {user && (
                 <>
                   <DetailRow
@@ -288,11 +308,14 @@ export default async function AccountPage() {
                   />
                   <DetailRow
                     label="Last login"
-                    value={user.lastLoggedIn ? formatDate(user.lastLoggedIn) : "Never"}
+                    value={
+                      user.lastLoggedIn
+                        ? formatDate(user.lastLoggedIn)
+                        : "Never"
+                    }
                   />
                 </>
               )}
-
               <Separator />
               <DetailRow
                 label="Devices"
@@ -321,18 +344,20 @@ export default async function AccountPage() {
                   user?.teams?.length ? `${user.teams.length} joined` : "None"
                 }
               />
-              {user?.teams?.length ? user.teams.length > 0 : false && (
-                <DetailRow
-                  label="Team names"
-                  value={
-                    user?.teams?.length
-                      ? user?.teams
-                        .map((t) => `${t.name}: ${t.description}`)
-                        .join(", ")
-                      : "No teams joined"
-                  }
-                />
-              )}
+              {user?.teams?.length
+                ? user.teams.length > 0
+                : false && (
+                    <DetailRow
+                      label="Team names"
+                      value={
+                        user?.teams?.length
+                          ? user?.teams
+                              .map((t) => `${t.name}: ${t.description}`)
+                              .join(", ")
+                          : "No teams joined"
+                      }
+                    />
+                  )}
             </CardContent>
           </Card>
         </div>

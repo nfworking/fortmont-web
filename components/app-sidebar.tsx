@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { CloudIcon, CommandIcon, DatabaseIcon, GlobeLock, LayoutDashboardIcon, MailIcon, NetworkIcon, ServerIcon, UsersIcon } from "lucide-react"
+import { CloudIcon, CommandIcon, DatabaseIcon, GitFork, GlobeLock, LayoutDashboardIcon, MailIcon, NetworkIcon, ServerIcon, UsersIcon } from "lucide-react"
 
 const data = {
   user: {
@@ -76,6 +76,13 @@ const data = {
       url: "/dashboard/entra",
       icon: (
         <CloudIcon /> 
+      )
+     },
+     {
+      title: "My Github",
+      url: "/dashboard/mygithub",
+      icon: (
+        <GitFork />
       )
      },
 

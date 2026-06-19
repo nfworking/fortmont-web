@@ -42,8 +42,27 @@ model AppUsers {
   assignedTickets     Tickets[]            @relation("TicketAssignee")
   teams               Team[]
   comments            Comment[]
+  githubLink          GitHubLink[]
   notifications Notifications[]
 
+}
+
+model GitHubLink {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  githubId      String   @unique
+  username      String
+  accessToken   String
+  tokenType     String   @default("bearer")
+  scope         String?
+  avatarUrl     String?
+  profileUrl    String?
+  linkedAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          AppUsers  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("github_links")
 }
 
 // NOTIFICATIONS

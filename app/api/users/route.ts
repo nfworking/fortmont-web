@@ -68,8 +68,18 @@ export async function GET(req: Request) {
         createdAt: true,
       },
     },
+    githubLink: {
+      select: {
+        username: true,
+        profileUrl: true,
+        avatarUrl: true,
+        scope: true,
+        linkedAt: true,
+      }
+    }
   },
-});
+}
+);
 
   return Response.json(users.map(sanitizeAppUser));
 }
