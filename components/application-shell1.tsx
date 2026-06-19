@@ -15,6 +15,7 @@ type ApplicationShell1Props = {
     name?: string | null;
     email?: string | null;
     avatar?: string | null;
+    isGithubLinked?: boolean | null;
   } | null;
 };
 

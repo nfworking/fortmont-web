@@ -16,11 +16,15 @@ export default async function LoginPage({
   return (
     <div className="relative min-h-svh">
       {/* Background Image */}
-      <img
-        src="https://images.unsplash.com/photo-1779464433263-35e2c02d1cc8?q=80&w=1528&auto=format&fit=crop"
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover"
-      />
+      <video
+  autoPlay
+  muted
+  loop
+  playsInline
+  className="absolute inset-0 h-full w-full object-cover"
+>
+  <source src="/login2.mp4" type="video/mp4" />
+</video>
 
       {/* Dark Overlay */}
       <div className="absolute inset-0 backdrop-blur" />
@@ -36,7 +40,7 @@ export default async function LoginPage({
               ortmont Web
             </a>
           </div>
-         <div className="rounded-xl border bg-background/80 backdrop-blur-md p-6 shadow-xl">
+         <div className="rounded-xl border bg-background/30 backdrop-blur-md p-6 shadow-xl">
           <LoginForm callbackUrl={params?.callbackUrl ?? "/dashboard"} />
           </div>
         </div>

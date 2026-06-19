@@ -58,3 +58,7 @@ This project was developed by a human developer with assistance from AI tools, p
 AI assistance was used to help adapt and convert interface designs into React Native-compatible implementations. All application logic, architecture, and functionality were designed, reviewed, and validated by the developer. AI-generated code was subject to human review before inclusion in the project.
 
 AI was primarily used as a development aid for tasks such as code suggestions, troubleshooting, and assistance with complex implementation challenges. Final decisions regarding design, functionality, and code quality remained under the developer's control throughout the project.
+
+### Images and Video resources
+
+This project contains images and videos that are free for use from pexels and unsplash. If you see your content, and would like for me to reference it, let me know!

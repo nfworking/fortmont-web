@@ -39,6 +39,7 @@ export default async function DashboardLayout({
             displayName: true,
             email: true,
             avatarUrl: true,
+            githubLink: {select: { username: true } },
           },
         })
       : null;
@@ -69,6 +70,7 @@ export default async function DashboardLayout({
                 name: user.displayName ?? session?.user?.name ?? null,
                 email: user.email ?? session?.user?.email ?? null,
                 avatar: user.avatarUrl ?? sessionUser?.image ?? null,
+                isGithubLinked: user.githubLink?.[0]?.username !== undefined,
               }
             : session?.user ?? null
         }

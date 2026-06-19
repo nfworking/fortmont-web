@@ -18,20 +18,22 @@ export function NavMain({
     title: string
     url: string
     icon?: React.ReactNode
+    onClick?: (e: React.MouseEvent) => void // 1. Allow the onClick handler in the TypeScript type
   }[]
 }) {
   const pathname = usePathname()
 
   return (
-    <SidebarGroup >
-      <SidebarGroupContent className="flex flex-col gap-2 ">
-        <SidebarMenu >
+    <SidebarGroup>
+      <SidebarGroupContent className="flex flex-col gap-2">
+        <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 asChild
                 tooltip={item.title}
                 isActive={pathname === item.url || pathname.startsWith(item.url + "/")}
+                onClick={item.onClick} // 2. Attach the click interceptor here
               >
                 <Link href={item.url}>
                   {item.icon}

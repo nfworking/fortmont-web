@@ -355,7 +355,7 @@ export default function GitHubDashboardPage() {
                   <Tooltip
                     contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: "8px", fontSize: 12 }}
                     labelStyle={{ color: "white", marginBottom: 2 }}
-                    formatter={(v: number) => [`${v} commits`, ""]}
+                    formatter={(value) => [`${value} commits`, ""]}
                     cursor={{ fill: "rgba(255,255,255,0.0)" }}
                   />
                   <Bar dataKey="commits" radius={[3, 3, 0, 0]}>
