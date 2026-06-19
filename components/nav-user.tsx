@@ -10,92 +10,98 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar"
-import { ChevronsUpDown, LogOut, User } from "lucide-react"
-import { signOut } from "next-auth/react";
+import { LogOut, User } from "lucide-react"
+import { signOut, useSession } from "next-auth/react"
 
-type Props = {
-  user?: {
-    name?: string | null
-    email?: string | null
-    avatar?: string | null
+
+export function NavUser() {
+  const { data: session, status } = useSession()
+
+  const effectiveUser = {
+    name: session?.user?.name ?? "",
+    email: session?.user?.email ?? "",
+    avatar: session?.user?.image ?? "",
   }
-}
-
-export function NavUser({ user }: Props) {
-  const { isMobile } = useSidebar()
-  const effectiveUser = user ?? { name: "", email: "", avatar: "" }
   const initials = (effectiveUser.name ?? "")
     .split(" ")
     .filter(Boolean)
-    .map((namePart) => namePart[0])
+    .map((part) => part[0])
     .join("")
     .slice(0, 2)
     .toUpperCase()
 
   return (
-    <SidebarMenu className="bg-transparent backdrop-blur">
-      <SidebarMenuItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className=" data-[state=open]:text-sidebar-accent-foreground"
-            >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={effectiveUser.avatar ?? undefined} alt={effectiveUser.name ?? ""} />
-                <AvatarFallback className="rounded-lg">{initials || "U"}</AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{effectiveUser.name}</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {effectiveUser.email}
-                </span>
-              </div>
-              <ChevronsUpDown className="ml-auto size-4" />
-            </SidebarMenuButton>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg bg-transparent backdrop-blur"
-            side={isMobile ? "bottom" : "top"}
-            align="end"
-            sideOffset={4}
-          >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={effectiveUser.avatar ?? undefined} alt={effectiveUser.name ?? ""} />
-                  <AvatarFallback className="rounded-lg">{initials || "U"}</AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{effectiveUser.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {effectiveUser.email}
-                  </span>
-                </div>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { window.location.href = "/dashboard/account" }}>
-              <User className="mr-2 size-4" />
-              Account
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()}>
-              <LogOut className="mr-2 size-4" />
-              Log out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarMenuItem>
-    </SidebarMenu>
+  
+
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="relative flex items-center   gap-2 rounded-full outline-none ring-offset-background transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          aria-label="Open user menu"
+        >
+          <Avatar className="h-8 w-8 rounded-full">
+            <AvatarImage
+              src={effectiveUser.avatar ?? undefined}
+              alt={effectiveUser.name ?? ""}
+            />
+            <AvatarFallback className="rounded-full text-xs font-medium">
+              {initials || "U"}
+            </AvatarFallback>
+          </Avatar>
+         <p className="text-sm font-medium leading-tight">
+            {effectiveUser.name}
+          </p>
+        </button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent
+        className="w-56 rounded-xl border border-border/50 bg-transparent  backdrop-blur-md shadow-lg"
+        align="end"
+        sideOffset={8}
+      >
+        {/* User info header */}
+        <DropdownMenuLabel className="p-0 font-normal">
+          <div className="flex items-center gap-3 px-3 py-3">
+            <Avatar className="h-9 w-9 rounded-full">
+              <AvatarImage
+                src={effectiveUser.avatar ?? undefined}
+                alt={effectiveUser.name ?? ""}
+              />
+              <AvatarFallback className="rounded-full text-xs font-medium">
+                {initials || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col min-w-0">
+              <span className="truncate text-sm font-medium leading-tight">
+                {effectiveUser.name}
+              </span>
+              <span className="truncate text-xs text-muted-foreground leading-tight">
+                {effectiveUser.email}
+              </span>
+            </div>
+          </div>
+        </DropdownMenuLabel>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          className="gap-2 rounded-lg mx-1 cursor-pointer"
+          onClick={() => { window.location.href = "/dashboard/account" }}
+        >
+          <User className="size-4 text-muted-foreground" />
+          Account
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          className="gap-2 rounded-lg mx-1 mb-1 cursor-pointer text-destructive focus:text-destructive"
+          onClick={() => signOut()}
+        >
+          <LogOut className="size-4" />
+          Log out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
-
-// named export only
-// named export only

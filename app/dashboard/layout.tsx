@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DashboardBackground } from "@/components/dashboard_res/background";
 import Image from "next/image";
+import {SessionProvider} from "next-auth/react"
 
 export default async function DashboardLayout({
   children,
@@ -42,11 +43,14 @@ export default async function DashboardLayout({
       : null;
 
   return (
-    <div className="relative min-h-screen w-full">
-      {/* Fixed background layer */}
-      <div className="fixed inset-0 -z-10">
-     <Image
-       src="https://images.unsplash.com/photo-1778003586700-6300af8182f8?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+
+      <div className="relative min-h-screen w-full">
+            <SessionProvider session={session}>
+     
+        {/* Fixed background layer */}
+        <div className="fixed inset-0 -z-10">
+       <Image
+         src="https://images.unsplash.com/photo-1778003586700-6300af8182f8?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
        alt="Dashboard Background"
        width={1000}
        height={1080}
@@ -70,6 +74,8 @@ export default async function DashboardLayout({
       >
         {children}
       </ApplicationShell1>
+      </SessionProvider>
     </div>
+    
   );
 }

@@ -108,7 +108,7 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
   return (
-    <Sidebar  collapsible="offcanvas" {...props}>
+    <Sidebar  collapsible="offcanvas" {...props} className="h-full">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -130,7 +130,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user ?? data.user} />
+        
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

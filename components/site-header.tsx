@@ -3,6 +3,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 
 import { ThemeToggle } from "@/components/theme-toggle"
 import {NotificationPanel} from "@/components/notificationUi"
+import { NavUser } from "@/components/nav-user"
 
 
 type SiteHeaderProps = {
@@ -22,7 +23,7 @@ export function SiteHeader({ title = "LXC and registry information" }: SiteHeade
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
           <NotificationPanel />
-          
+          <NavUser/>
         </div>
       </div>
     </header>
