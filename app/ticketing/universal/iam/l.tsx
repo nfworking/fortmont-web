@@ -32,7 +32,7 @@ function EntryCard({ entry }: { entry: Entry }) {
 
 export default function IntegrationsPage() {
   return (
-    <div className="min-h-screen bg-transparent">
+    <div className="min-h-screen bg-background">
       {/* same mesh-gradient background used on the GitHub dashboard */}
       <div
         className="pointer-events-none fixed inset-0 -z-10"

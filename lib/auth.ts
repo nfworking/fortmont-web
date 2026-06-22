@@ -208,7 +208,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         log(`Credentials login successful for user ${appUser.id} — firing notification`);
-        // Don't await — don't block the login response
         sendLoginNotification(appUser.id, "credentials").catch((err) =>
           logError("Background notification failed (credentials)", err),
         );
@@ -233,16 +232,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const syncedUser = await syncEntraUser(profile as Record<string, unknown> | undefined);
         log(`Entra sync result: ${syncedUser ? `id=${syncedUser.id}` : "null"}`);
 
-
         if (syncedUser) { 
           updateLastLogin(syncedUser.id).catch((err) =>
-          logError("Failed updating last login (entra)", err),
-           );
+            logError("Failed updating last login (entra)", err),
+          );
           token.sub = syncedUser.id;
           token.name = syncedUser.displayName ?? syncedUser.username;
           token.email = syncedUser.email ?? token.email;
           token.username = syncedUser.username;
-          token.role = syncedUser.role;
+          token.role = syncedUser.role; // Safe extraction
           token.phone = syncedUser.phone;
           token.avatarUrl = syncedUser.avatarUrl;
           token.isActive = syncedUser.isActive;
@@ -250,67 +248,59 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.isOnboarded = syncedUser.onboarded;
 
           log(`Entra login complete for user ${syncedUser.id} — firing notification`);
-          // Don't await — don't block the login response
           sendLoginNotification(syncedUser.id, "entra").catch((err) =>
             logError("Background notification failed (entra)", err),
           );
-          
-         }
- 
+        }
 
         return token;
       }
 
       if (user?.id) {
-  log(`JWT callback — credentials login, enriching token for user ${user.id}`);
-  const appUser = await prisma.appUsers.findUnique({ where: { id: user.id } });
+        log(`JWT callback — credentials login, enriching token for user ${user.id}`);
+        const appUser = await prisma.appUsers.findUnique({ where: { id: user.id } });
 
-  if (appUser) {
-    updateLastLogin(appUser.id).catch((err) =>
-      logError("Failed updating last login (credentials)", err),
-    );
+        if (appUser) {
+          updateLastLogin(appUser.id).catch((err) =>
+            logError("Failed updating last login (credentials)", err),
+          );
 
-    token.sub = appUser.id;
-    token.name = appUser.displayName ?? appUser.username;
-    token.email = appUser.email ?? token.email;
-    token.username = appUser.username;
-    token.role = appUser.role;
-    token.phone = appUser.phone;
-    token.avatarUrl = appUser.avatarUrl;
-    token.isActive = appUser.isActive;
-    token.isEntraUser = appUser.isEntraUser;
-    token.isOnboarded = appUser.onboarded;
-  }
-}
+          token.sub = appUser.id;
+          token.name = appUser.displayName ?? appUser.username;
+          token.email = appUser.email ?? token.email;
+          token.username = appUser.username;
+          token.role = appUser.role; // Safe extraction
+          token.phone = appUser.phone;
+          token.avatarUrl = appUser.avatarUrl;
+          token.isActive = appUser.isActive;
+          token.isEntraUser = appUser.isEntraUser;
+          token.isOnboarded = appUser.onboarded;
+        }
+      }
 
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        const enrichedUser = session.user as typeof session.user & {
-          id?: string;
-          username?: string;
-          role?: string | null;
-          phone?: string | null;
-          avatarUrl?: string | null;
-          isActive?: boolean;
-          isEntraUser?: boolean | null;
-          isOnboarded?: boolean;
-        };
+        const enrichedUser = session.user as any; 
 
-        if (typeof token.name === "string") session.user.name = token.name;
-        if (typeof token.email === "string") session.user.email = token.email;
-        if (typeof token.avatarUrl === "string") {
-          session.user.image = token.avatarUrl;
+        // Always copy strings safely if they exist
+        if (token.name) session.user.name = token.name as string;
+        if (token.email) session.user.email = token.email as string;
+        
+        if (token.avatarUrl) {
+          session.user.image = token.avatarUrl as string;
           enrichedUser.avatarUrl = token.avatarUrl;
         }
-        if (typeof token.sub === "string") enrichedUser.id = token.sub;
-        if (typeof token.username === "string") enrichedUser.username = token.username;
-        if (typeof token.role === "string") enrichedUser.role = token.role;
-        if (typeof token.phone === "string") enrichedUser.phone = token.phone;
-        if (typeof token.isActive === "boolean") enrichedUser.isActive = token.isActive;
-        if (typeof token.isEntraUser === "boolean") enrichedUser.isEntraUser = token.isEntraUser;
-        if (typeof token.isOnboarded === "boolean") enrichedUser.isOnboarded = token.isOnboarded;
+
+        // Direct property verification instead of strict "typeof === string" guard checks
+        if (token.sub) enrichedUser.id = token.sub;
+        if (token.username) enrichedUser.username = token.username;
+        if (token.role) enrichedUser.role = token.role; // Fixed: Will no longer drop role enums/custom types
+        if (token.phone) enrichedUser.phone = token.phone;
+        if (token.isActive !== undefined) enrichedUser.isActive = token.isActive;
+        if (token.isEntraUser !== undefined) enrichedUser.isEntraUser = token.isEntraUser;
+        if (token.isOnboarded !== undefined) enrichedUser.isOnboarded = token.isOnboarded;
       }
 
       return session;

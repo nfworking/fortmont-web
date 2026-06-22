@@ -102,6 +102,10 @@ export function CommandDemo() {
               <Globe className="mr-2 h-4 w-4" />
               <span>Webmail</span>
             </CommandItem>
+            <CommandItem onSelect={() => handleNavigation("/admin_ticketing/dashboard")}>
+              <Globe className="mr-2 h-4 w-4" />
+              <span>Tickets</span>
+            </CommandItem>
             <CommandItem onSelect={() => handleNavigation("/apps")}>
               <Globe className="mr-2 h-4 w-4" />
               <span>Apps</span>

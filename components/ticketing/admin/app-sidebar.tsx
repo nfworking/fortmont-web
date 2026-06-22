@@ -30,6 +30,14 @@ const data = {
         <LayoutDashboardIcon
         />
       ),
+    },
+    {
+      title: "Request Forms",
+      url: "/admin_ticketing/requests",
+      icon: (
+        <MailIcon
+        />
+      ),
     }
   
   

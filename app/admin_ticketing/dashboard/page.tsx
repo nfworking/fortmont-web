@@ -1,11 +1,20 @@
 import { TicketDashboard } from '@/components/ticketing/admin/ticket-dashboard';
 import { prisma } from '@/lib/prisma';
+import { headers } from "next/headers";
+
 
 export default async function DashboardPage() {
-  const res = await fetch("https://api.fortmont.me/api/ticketing/get/ticket", {
+  const cookie = (await headers()).get("cookie");
+
+const res = await fetch(
+  `${process.env.NEXTHOST}/api/ticketing/get/ticket`,
+  {
+    headers: {
+      cookie: cookie ?? "",
+    },
     cache: "no-store",
-    credentials: "include",
-  });
+  }
+);
 
   const tickets = await res.json();
   const users = await prisma.appUsers.findMany({

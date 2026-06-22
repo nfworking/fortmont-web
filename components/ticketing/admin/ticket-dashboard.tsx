@@ -560,8 +560,12 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
     try {
       const res = await fetch(`/api/ticketing/get/ticket?refresh=${Date.now()}`, {
         cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
+        credentials: 'include', // <-- FIXED: Moved to top level
+        headers: { 
+          'Cache-Control': 'no-cache' 
+        },
       });
+      
       if (!res.ok) throw new Error(`Refresh failed with ${res.status}`);
       const refreshedTickets = await res.json();
       setTicketRows(refreshedTickets);

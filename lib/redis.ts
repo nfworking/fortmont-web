@@ -1,7 +1,7 @@
 import { createClient } from "redis";
 
 export const redis = createClient({
-  url: process.env.REDIS_URL || "redis://localhost:6379",
+  url: process.env.REDIS_URL || "redis://172.20.0.25:6379",
 });
 
 redis.on("error", (err) => console.error("Redis Error:", err));

@@ -149,7 +149,7 @@ model Tickets {
   type         String
   department   String
   subject      String
-  description  String
+  description  String         @db.LongText
   priority     TicketPriority
   status       String?
   teamId       String?
