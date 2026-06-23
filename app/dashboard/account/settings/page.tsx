@@ -116,6 +116,12 @@ export default async function AccountPage(): Promise<React.ReactElement> {
           linkedAt: true,
         },
       },
+      storage: {
+        select: {
+          quotaBytes: true,
+          usedBytes: true,
+        },
+      },
     },
   });
 
@@ -267,6 +273,15 @@ export default async function AccountPage(): Promise<React.ReactElement> {
                 value={user?.email ?? sessionUser.email ?? "Not set"}
               />
               <DetailRow label="Phone" value={user?.phone ?? "Not set"} />
+              <Separator />
+              <DetailRow
+                label="Storage used"
+                value={user?.storage ? `${(Number(user.storage.usedBytes) / 1e6).toFixed(2)} MB of ${(Number(user.storage.quotaBytes) / 1e6).toFixed(2)} MB` : "No storage data"}
+              />
+              <DetailRow
+                label="Storage quota"
+                value={user?.storage ? `${(Number(user.storage.quotaBytes) / 1e6).toFixed(2)} MB` : "No storage data"}
+              />
               <Separator />
               <DetailRow
                 label="Primary mailbox"

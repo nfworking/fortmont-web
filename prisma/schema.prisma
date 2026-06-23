@@ -19,20 +19,20 @@ enum TicketPriority {
 
 // CORE SCHEMA MODEL FOR FORTMONT USERS
 model AppUsers {
-  id           String    @id @default(uuid())
-  username     String    @unique
+  id           String   @id @default(uuid())
+  username     String   @unique
   displayName  String?
-  email        String?   @unique
+  email        String?  @unique
   role         String?
   avatarUrl    String?
   phone        String?
-  isEntraUser  Boolean?  @default(false)
+  isEntraUser  Boolean? @default(false)
   passwordHash String
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  onboarded    Boolean?  @default(false)
-  lastLoggedIn DateTime  @default(now())
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  onboarded    Boolean? @default(false)
+  lastLoggedIn DateTime @default(now())
 
   // RELATIONS
   mailboxes           UserMailbox[]
@@ -43,44 +43,43 @@ model AppUsers {
   teams               Team[]
   comments            Comment[]
   githubLink          GitHubLink[]
-  notifications Notifications[]
-  sessions      UserSession[]
-
+  notifications       Notifications[]
+  sessions            UserSession[]
+  files               File[]
+  storage             UserStorage?
+  fileActivities      FileActivity[]
 }
 
 model GitHubLink {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  githubId      String   @unique
-  username      String
-  accessToken   String
-  tokenType     String   @default("bearer")
-  scope         String?
-  avatarUrl     String?
-  profileUrl    String?
-  linkedAt      DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  githubId    String   @unique
+  username    String
+  accessToken String
+  tokenType   String   @default("bearer")
+  scope       String?
+  avatarUrl   String?
+  profileUrl  String?
+  linkedAt    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  user          AppUsers  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user AppUsers @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("github_links")
 }
 
 // NOTIFICATIONS
-model Notifications{
-id           String    @id @default(uuid())
-type         String
-title        String
-description  String
+model Notifications {
+  id          String @id @default(uuid())
+  type        String
+  title       String
+  description String
 
-
-createdAt    DateTime  @default(now())
-read         Boolean?  @default(false)
-userId       String
-user         AppUsers @relation(fields: [userId], references: [id])
-
+  createdAt DateTime @default(now())
+  read      Boolean? @default(false)
+  userId    String
+  user      AppUsers @relation(fields: [userId], references: [id])
 }
-
 
 // PASSWORD RESET FOR USERS
 model PasswordResetToken {
@@ -95,8 +94,8 @@ model PasswordResetToken {
 // MOBILE DEVICE SCHEMA FOR USERS 
 model DeviceToken {
   id              String   @id @default(uuid())
-  token           String   @unique 
-  platform        String   
+  token           String   @unique
+  platform        String
   deviceVersion   String?
   deviceName      String?
   deviceModelName String?
@@ -114,10 +113,10 @@ model DeviceToken {
 model UserMailbox {
   id                String   @id @default(uuid())
   userId            String
-  email             String   
+  email             String
   encryptedPassword String
   isPrimary         Boolean  @default(true)
-  provider          String?  
+  provider          String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -173,7 +172,7 @@ model Comment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ticket Tickets @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticket Tickets  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   author AppUsers @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([ticketId])
@@ -200,8 +199,90 @@ model UserSession {
   lastActive    DateTime @default(now())
   expiresAt     DateTime
 
-  user          AppUsers @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user AppUsers @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("user_sessions")
+}
+
+model File {
+  id String @id @default(uuid())
+
+  // ownership
+  ownerId String
+  owner   AppUsers @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // storage backend
+  bucket    String
+  objectKey String @unique
+
+  // file metadata
+  name     String
+  size     BigInt
+  mimeType String?
+
+  // relationships (important for your platform)
+  ticketId String?
+  assetId  String?
+
+  // folder system (simple path-based)
+  folderPath String?
+
+  // sharing
+  isPublic Boolean @default(false)
+
+  // lifecycle
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  fileShares     FileShare[]
+  fileActivities FileActivity[]
+
+  @@index([ownerId])
+  @@index([ticketId])
+  @@index([assetId])
+}
+
+model UserStorage {
+  userId String   @id
+  user   AppUsers @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  quotaBytes BigInt @default(1073741824) // 1GB default
+  usedBytes  BigInt @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model FileShare {
+  id String @id @default(uuid())
+
+  fileId String
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  token String @unique
+
+  expiresAt DateTime?
+  password  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([fileId])
+}
+
+model FileActivity {
+  id String @id @default(uuid())
+
+  fileId String
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   AppUsers @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  action String // UPLOAD, DOWNLOAD, DELETE, MOVE, RENAME
+
+  createdAt DateTime @default(now())
+
+  @@index([fileId])
+  @@index([userId])
 }

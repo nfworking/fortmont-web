@@ -1,17 +1,18 @@
 {
   "name": "fortmontapi",
-  "version": "2.18.0",
+  "version": "2.18.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "docker:build": "docker build -t fortmontapi:2.18.0 .",
-    "docker:tag": "docker tag fortmontapi:2.18.0 172.20.0.18:5000/fortmontapi:2.18.0",
-    "docker:push": "docker push 172.20.0.18:5000/fortmontapi:2.18.0 ",
+    "docker:build": "docker build -t fortmontapi:2.18.2 .",
+    "docker:tag": "docker tag fortmontapi:2.18.2 172.20.0.18:5000/fortmontapi:2.18.2",
+    "docker:push": "docker push 172.20.0.18:5000/fortmontapi:2.18.2 ",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1073.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
