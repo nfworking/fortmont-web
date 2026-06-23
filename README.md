@@ -1,5 +1,19 @@
 ## Fortmont Web & Fortmont Webmail
 
+### Overview and Overhaul
+
+Fortmont Web is designed to be a central control plane for a homelab instance, it would connect to local or remote homelab services collecting data from http endpoints, which would display as a dashboard for the homelab. The current state and version of the project is still in early development. Most of the features have not been tested for errors or bugs, however bugs are being fixed as they are discovered. The current UI of the application is close to being consistent, however big improvements can be made to make it better. The application also does not currently have any user defined values, which would make it hard for multi instance deployment. Further development will include the ability to interact with the proxmox api, the mail api, the github api and many of the other API's that were implemented in the project. Within the progress that has been made, it can be determined that V3.0.0 will introduce big changes, including to the auth system, the ui and layout as well as the ability to interact with the API's.
+
+
+#### UI: The current UI does feature a blur interface, but this might change in future versions, removing the need for blur fuctionality. Eventually it will move to a more user defined function rather than baked into the code. 
+
+#### API: The Api will most likely be moved to a more central platform, where it will become a more managed instance. Currently the API is baked into the application, making it difficult for migration at this time. The API moving forward will become more modular and will be under the new prefix /api/${app.version}json route, rather than the previous /api routes. It will also become more managed, allowing the selection for controlling entries in the API routes, as well as adding a authentication layer to it, protecting any sensitive information the route may return
+
+
+#### Auth: The auth system may go through a security overhaul moving the static cookie system with no session revocation to a more or cookie version management system. This will improve application security and improve the ability for users to trust the platform
+
+#### Ticketing: The ticketing system will undergo a huge overhaul once all features are implemented. It will feature a more workflow based ui and interface, allowing users to be seperated from administrators. It will again feature RBAC, live comments and other features. It will also undergo a security overhaul, making sure that the application becomes more secure not allowing unauthorized users from accesing its interface. 
+
 ### Requirements
 
 - A database server, preferably mysql with a user able to access from remote connections
