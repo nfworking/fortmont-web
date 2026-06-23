@@ -26,6 +26,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { signOut } from "next-auth/react"
 
 // ---------- Types ----------
 
@@ -197,17 +198,20 @@ export function NotificationPanel() {
   // doesn't bring the item back before the backend catches up.
   const dismissedIdsRef = React.useRef<Set<string>>(new Set())
 
-  const fetchNotifications = React.useCallback(async () => {
+ const fetchNotifications = React.useCallback(async () => {
     try {
       const res = await fetch(NOTIFICATIONS_ENDPOINT, {
         credentials: "include",
-      })
+      });
 
-      if (!res.ok) {
-        throw new Error(`Request failed with status ${res.status}`)
+      if (res.status === 401) {
+        // Wipes Chrome application cookies instantly and handles the visual redirect
+        await signOut({ redirectTo: "/login" });
+        return;
       }
 
-      const data: ApiNotification[] = await res.json()
+      // Explicitly type the incoming API response data here
+      const data: ApiNotification[] = await res.json();
 
       setNotifications(
         data

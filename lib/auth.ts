@@ -176,7 +176,10 @@ async function syncEntraUser(profile: Record<string, unknown> | undefined) {
 
 // ─── Custom Session Helper ───────────────────────────────────────────────────
 
-async function createNewSession(userId: string) {
+// ─── Inside auth.ts ───────────────────────────────────────────────────────────
+
+// Add the 'export' keyword here:
+export async function createNewSession(userId: string) {
   const COOKIE_VERSION = parseInt(process.env.COOKIE_VERSION || "1", 10);
   let userAgent: string | null = null;
   let ipAddress: string | null = null;
@@ -208,7 +211,6 @@ async function createNewSession(userId: string) {
     lastVerified: Date.now(),
   };
 }
-
 // ─── NextAuth config ───────────────────────────────────────────────────────────
 
 export const { handlers, signIn, signOut, auth } = NextAuth({

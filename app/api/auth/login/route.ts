@@ -1,13 +1,15 @@
+// ─── Inside route.ts ──────────────────────────────────────────────────────────
 import { encode } from "next-auth/jwt";
 import { NextRequest } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
+// 1. IMPORT your session creator helper directly from auth.ts
+import { createNewSession } from "@/lib/auth"; 
 
 export const runtime = "nodejs";
 
 const AUTH_JWT_SALT = "authjs.session-token";
-
 const LOG_PREFIX = "[entra-login]";
 
 function log(message: string, data?: unknown) {
@@ -40,7 +42,6 @@ export async function POST(request: NextRequest) {
   }
 
   let body: unknown;
-
   try {
     body = await request.json();
     log("Request body parsed successfully");
@@ -91,8 +92,6 @@ export async function POST(request: NextRequest) {
     return createLoginError("Invalid username/email or password", 401);
   }
 
-  log(`User found: id=${user.id}, username="${user.username}", isActive=${user.isActive}`);
-
   if (!user.isActive) {
     log(`User ${user.id} is inactive — rejecting login`);
     return createLoginError("Invalid username/email or password", 401);
@@ -100,23 +99,26 @@ export async function POST(request: NextRequest) {
 
   log(`Verifying password for user: ${user.id}`);
   const passwordMatches = verifyPassword(password, user.passwordHash);
-  log(`Password verification result: ${passwordMatches}`);
-
   if (!passwordMatches) {
     return createLoginError("Invalid username/email or password", 401);
   }
 
   log(`Updating lastLoggedIn for user: ${user.id}`);
+  await prisma.appUsers.update({
+    where: { id: user.id },
+    data: { lastLoggedIn: new Date() },
+  });
 
-await prisma.appUsers.update({
-  where: {
-    id: user.id,
-  },
-  data: {
-    lastLoggedIn: new Date(),
-  },
-});
-
+  // 2. NEW: GENERATE TRACKED DATABASE SESSION RECORD
+  log(`Creating physical database session tracking row for mobile device...`);
+  let sessionDetails;
+  try {
+    sessionDetails = await createNewSession(user.id);
+    log(`Session successfully saved in DB: ${sessionDetails.sessionId}`);
+  } catch (sessionErr) {
+    logError("Failed to create user session record in database", sessionErr);
+    return createLoginError("Could not initialize your active user session", 500);
+  }
 
   log(`Encoding JWT token for user: ${user.id}`);
   const token = await encode({
@@ -131,9 +133,14 @@ await prisma.appUsers.update({
       role: user.role,
       phone: user.phone,
       avatarUrl: user.avatarUrl,
+      
+      // 3. ATTACH THE EXPECTED METADATA TO PREVENT BLANK TOKEN INVALIDATION
+      sessionId: sessionDetails.sessionId,
+      cookieVersion: sessionDetails.cookieVersion,
+      lastVerified: sessionDetails.lastVerified,
     },
   });
-  log("JWT token encoded successfully");
+  log("JWT token encoded successfully with session tracking variables attached.");
 
   // ==========================================
   // MOBILE PUSH NOTIFICATION ON WEB LOGIN
@@ -144,61 +151,26 @@ await prisma.appUsers.update({
       where: { userId: user.id },
     });
 
-    log(`Found ${userDevices.length} registered device(s) for user ${user.id}`, {
-      deviceIds: userDevices.map((d) => ({ id: d.id, tokenPreview: d.token.slice(0, 20) + "..." })),
-    });
-
-    if (userDevices.length === 0) {
-      log(`No device tokens registered for user ${user.id} — skipping notifications`);
-    } else {
-      log("Importing Firebase Admin SDK...");
-      let admin: Awaited<typeof import("@/lib/firebaseAdmin")>["default"];
-      try {
-        admin = (await import("@/lib/firebaseAdmin")).default;
-        log("Firebase Admin SDK imported successfully");
-      } catch (importErr) {
-        logError("Failed to import Firebase Admin SDK — check firebaseAdmin.ts init", importErr);
-        throw importErr; // Re-throw so outer catch logs the full pipeline failure
-      }
-
+    if (userDevices.length > 0) {
+      let admin = (await import("@/lib/firebaseAdmin")).default;
       const notificationPayload = {
         notification: {
-          title: "New Web Login",
-          body: "Your account was just accessed via the web client.",
+          title: "New Mobile Login",
+          body: "Your account was just accessed via the mobile client.",
         },
       };
-      log("Notification payload:", notificationPayload);
 
-      const notificationResults = await Promise.allSettled(
+      await Promise.allSettled(
         userDevices.map(async (device) => {
-          log(`Sending notification to device: ${device.id} (token: ${device.token.slice(0, 20)}...)`);
-          try {
-            const messageId = await admin.messaging().send({
-              token: device.token,
-              ...notificationPayload,
-            });
-            log(`Notification sent successfully to device ${device.id} — messageId: ${messageId}`);
-            return messageId;
-          } catch (sendErr) {
-            logError(`Failed to send notification to device ${device.id}`, sendErr);
-            throw sendErr;
-          }
+          return admin.messaging().send({
+            token: device.token,
+            ...notificationPayload,
+          });
         }),
       );
-
-      // Log a summary of all results
-      const succeeded = notificationResults.filter((r) => r.status === "fulfilled").length;
-      const failed = notificationResults.filter((r) => r.status === "rejected").length;
-      log(`Notification dispatch complete — ${succeeded} succeeded, ${failed} failed`);
-
-      notificationResults.forEach((result, i) => {
-        if (result.status === "rejected") {
-          logError(`Device index ${i} rejection reason`, result.reason);
-        }
-      });
     }
   } catch (fcmError) {
-    logError("Notification pipeline threw an unexpected error — login will still proceed", fcmError);
+    logError("Notification pipeline threw an unexpected error", fcmError);
   }
 
   log(`Login successful for user ${user.id} — returning token and profile`);
