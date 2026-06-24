@@ -5,8 +5,89 @@ import { auth } from "@/lib/auth";
 export const runtime = "nodejs";
 
 function sanitizeAppUser(user: any) {
-  return user;
+  if (!user) return user;
+  
+  // Clone the object to prevent mutation side-effects if necessary
+  const sanitized = { ...user };
+
+  if (sanitized.storage) {
+    sanitized.storage = {
+      ...sanitized.storage,
+      quotaBytes: Number(sanitized.storage.quotaBytes),
+      usedBytes: Number(sanitized.storage.usedBytes),
+    };
+  }
+
+  if (sanitized.files && Array.isArray(sanitized.files)) {
+    sanitized.files = sanitized.files.map((file: any) => ({
+      ...file,
+      size: Number(file.size),
+    }));
+  }
+
+  return sanitized;
 }
+
+// Reusable select block to avoid duplication between findUnique and findMany
+const userSelectFields = {
+  id: true,
+  username: true,
+  displayName: true,
+  email: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true,
+  isEntraUser: true,
+  phone: true,
+  mailboxes: { select: { id: true, email: true, isPrimary: true } },
+  teams: { select: { id: true, name: true, description: true } },
+  notifications: {
+    select: {
+      id: true,
+      type: true,
+      title: true,
+      description: true,
+      read: true,
+      createdAt: true,
+    },
+  },
+  githubLink: {
+    select: {
+      username: true,
+      profileUrl: true,
+      avatarUrl: true,
+      scope: true,
+      linkedAt: true,
+    },
+  },
+  sessions: {
+    select: {
+      id: true,
+      userAgent: true,
+      ipAddress: true,
+      createdAt: true,
+      expiresAt: true,
+      lastActive: true,
+    },
+  },
+  storage: {
+    select: {
+      quotaBytes: true,
+      usedBytes: true,
+    },
+  },
+  files: {
+    select: {
+      id: true,
+      owner: { select: { id: true, username: true } },
+      bucket: true,
+      objectKey: true,
+      name: true,
+      size: true,
+    },
+  },
+  _count: { select: { createdTickets: true, assignedTickets: true } },
+};
 
 export async function GET(req: Request) {
   try {
@@ -16,96 +97,36 @@ export async function GET(req: Request) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.appUsers.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        username: true,
-        displayName: true,
-        email: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-        isEntraUser: true,
-        phone: true,
-        mailboxes: { select: { id: true, email: true, isPrimary: true } },
-        teams: { select: { id: true, name: true, description: true } },
-        notifications: {
-          select: {
-            id: true,
-            type: true,
-            title: true,
-            description: true,
-            read: true,
-            createdAt: true,
-          },
-        },
-        githubLink: {
-          select: {
-            username: true,
-            profileUrl: true,
-            avatarUrl: true,
-            scope: true,
-            linkedAt: true,
-          },
-        },
-        sessions: {
-          select: {
-            id: true,
-            userAgent: true,
-            ipAddress: true,
-            createdAt: true,
-            expiresAt: true,
-            lastActive: true,
-          },
-        },
-        storage: {
-          select: {
-            quotaBytes: true,
-            usedBytes: true,
-          },
-        },
-        files: {
-          select: {
-            id: true,
-            owner: { select: { id: true, username: true } },
-            bucket: true,
-            objectKey: true,
-            name: true,
-            size: true,
-          },
-        },
-        _count: { select: { createdTickets: true, assignedTickets: true } },
-      },
-    });
+    // Check if the 'all' header is present
+    const fetchAll = req.headers.get("all") !== null;
 
-    if (!user) {
-      return Response.json({ error: "User not found" }, { status: 404 });
+    if (fetchAll) {
+      // Fetch all users using findMany
+      const users = await prisma.appUsers.findMany({
+        select: userSelectFields,
+      });
+
+      const sanitizedUsers = users.map(user => sanitizeAppUser(user));
+      return Response.json(sanitizedUsers);
+    } else {
+      // Fetch the single authenticated user
+      const user = await prisma.appUsers.findUnique({
+        where: { id: session.user.id },
+        select: userSelectFields,
+      });
+
+      if (!user) {
+        return Response.json({ error: "User not found" }, { status: 404 });
+      }
+
+      return Response.json(sanitizeAppUser(user));
     }
-
-    const sanitizedUser = sanitizeAppUser(user);
-
-    if (sanitizedUser.storage) {
-      sanitizedUser.storage = {
-        ...sanitizedUser.storage,
-        quotaBytes: Number(sanitizedUser.storage.quotaBytes),
-        usedBytes: Number(sanitizedUser.storage.usedBytes),
-      };
-    }
-
-    if (sanitizedUser.files && Array.isArray(sanitizedUser.files)) {
-      sanitizedUser.files = sanitizedUser.files.map((file: any) => ({
-        ...file,
-        size: Number(file.size),
-      }));
-    }
-
-    return Response.json(sanitizedUser);
   } catch (error) {
     console.error("GET user error:", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
 export async function POST(req: Request) {
   const body = await req.json();
 
@@ -167,7 +188,6 @@ export async function POST(req: Request) {
       isActive: true,
       createdAt: true,
       updatedAt: true,
-
       storage: true,
     },
   });

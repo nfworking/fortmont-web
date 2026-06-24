@@ -41,9 +41,8 @@ export function UsersTable() {
   useEffect(() => {
     async function load() {
       const res = await fetch("/api/users", {
-        headers: {
-          "x-api-key": process.env.NEXT_PUBLIC_API_KEY ?? "",
-        }
+        credentials: "include",
+        headers: { "all": "true" },
       });
 
       if (!res.ok) {

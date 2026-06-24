@@ -1,3 +1,4 @@
+
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Metadata } from "next";
@@ -5,6 +6,7 @@ import React from "react";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link"
 
 import { AccountSettingsSidebar } from "@/components/account/Accountsettingssidebar";
 import { ProfileSection } from "@/components/account/Profilesection";
@@ -15,6 +17,11 @@ import { DevicesSection } from "@/components/account/Devicessection";
 import { GitHubSection } from "@/components/account/Githubsection";
 import { StorageSection } from "@/components/account/Storagesection";
 import { SessionsSection } from "@/components/account/Sessionsection";
+import DashboardPage from "@/components/account/StoragePage"
+import {ThemeToggle} from "@/components/theme-toggle";
+import {Layout, ArrowUpRightFromSquare} from "lucide-react"
+import { Button } from "@/components/ui/button";
+import { UploadPartRequest$ } from "@aws-sdk/client-s3";
 
 export const metadata: Metadata = {
   title: "Fortmont · Account",
@@ -53,6 +60,7 @@ type SectionKey =
   | "devices"
   | "github"
   | "storage"
+  | "storage-acc"
   | "sessions";
 
 const VALID_SECTIONS = new Set<SectionKey>([
@@ -63,6 +71,7 @@ const VALID_SECTIONS = new Set<SectionKey>([
   "devices",
   "github",
   "storage",
+  "storage-acc",
   "sessions",
 ]);
 
@@ -193,7 +202,8 @@ export default async function AccountPage({
 
       case "storage":
         return <StorageSection storage={user?.storage} />;
-
+      case "storage-acc":
+        return <DashboardPage />;
       case "sessions":
         return <SessionsSection currentSessionId={sessionUser.sessionId} />;
     }
@@ -203,8 +213,19 @@ export default async function AccountPage({
 
   return (
     <main className="flex flex-1 flex-col gap-0 p-4 md:p-6">
+        
       {/* Page header */}
-      <div className="mb-6 space-y-1">
+      <div className="mb-10 space-y-1">
+        <div className="flex justify-end">
+        <ThemeToggle />
+        <Button variant="outline" size="sm" className="gap-1.5 ml-2" asChild>
+      <Link href="/dashboard">
+        <Layout className="h-3.5 w-3.5" />
+        Return to dashboard
+        <ArrowUpRightFromSquare className="h-3.5 w-3.5" />
+      </Link>
+    </Button>
+        </div>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           Settings
         </p>

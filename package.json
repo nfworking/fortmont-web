@@ -1,13 +1,13 @@
 {
   "name": "fortmontapi",
-  "version": "2.18.2",
+  "version": "2.19.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "docker:build": "docker build -t fortmontapi:2.18.2 .",
-    "docker:tag": "docker tag fortmontapi:2.18.2 172.20.0.18:5000/fortmontapi:2.18.2",
-    "docker:push": "docker push 172.20.0.18:5000/fortmontapi:2.18.2 ",
+    "docker:build": "docker build -t fortmontapi:2.19.2 .",
+    "docker:tag": "docker tag fortmontapi:2.19.2 172.20.0.18:5000/fortmontapi:2.19.2",
+    "docker:push": "docker push 172.20.0.18:5000/fortmontapi:2.19.2 ",
     "start": "next start",
     "lint": "eslint"
   },
@@ -24,6 +24,7 @@
     "@react-three/fiber": "^9.6.1",
     "@shadergradient/react": "^2.4.20",
     "@tailwindcss/typography": "^0.5.20",
+    "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

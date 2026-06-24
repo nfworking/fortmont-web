@@ -24,7 +24,8 @@ import {
   NetworkIcon, 
   ServerIcon, 
   UsersIcon,
-  AlertTriangle 
+  AlertTriangle, 
+  Database
 } from "lucide-react"
 
 // Import your Dialog UI components here (assuming standard shadcn/ui setup)
@@ -85,6 +86,11 @@ const data = {
       url: "/dashboard/mygithub",
       icon: <GitFork />,
       requiresGithub: true, // Tagging this route to intercept it
+    },
+    {
+      title: "My Storage",
+      url: "/my-storage",
+      icon: <Database />,
     },
     {
       title: "Webmail",
