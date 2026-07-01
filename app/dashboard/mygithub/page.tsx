@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DashboardPage } from "@/components/dashboard/page-shell";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -222,7 +223,7 @@ export default function GitHubDashboardPage() {
   const memberAge = memberYear ? new Date().getFullYear() - memberYear : null;
 
   return (
-    <div className="min-h-screen p-6 space-y-6">
+    <DashboardPage className="min-h-screen">
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -391,7 +392,7 @@ export default function GitHubDashboardPage() {
                 {langStats.map((lang) => (
                   <div key={lang.name} className="flex items-center gap-2.5">
                     <span
-                      className="h-2 w-2 rounded-full flex-shrink-0"
+                      className="h-2 w-2 rounded-full shrink-0"
                       style={{ background: langColor(lang.name) }}
                     />
                     <span className="text-xs text-foreground w-24 truncate">{lang.name}</span>
@@ -473,7 +474,7 @@ export default function GitHubDashboardPage() {
                       <span>Updated {relativeDate(repo.pushed_at)}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 ml-4 flex-shrink-0">
+                  <div className="flex items-center gap-4 ml-4 shrink-0">
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Star className="h-3.5 w-3.5" />
                       {repo.stargazers_count.toLocaleString()}
@@ -489,6 +490,6 @@ export default function GitHubDashboardPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </DashboardPage>
   );
 }

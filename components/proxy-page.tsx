@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCwIcon } from "lucide-react";
-import {toast} from "sonner";
 
+import { DashboardHero, DashboardPage, DashboardSection } from "@/components/dashboard/page-shell";
 import { Button } from "@/components/ui/button";
 
 type ProxyApp = {
@@ -38,6 +38,9 @@ export default function ProxyPage() {
       const data = (await res.json()) as ProxyApiResponse;
       setApps(Array.isArray(data.apps) ? data.apps : []);
       setLastRefreshedAt(new Date());
+    } catch (error) {
+      // Good practice to catch potential fetch errors
+      setApps([]);
     } finally {
       setIsRefreshing(false);
     }
@@ -48,45 +51,32 @@ export default function ProxyPage() {
   }, [loadProxyApps]);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-      <section className="rounded-2xl border border-border/60 backdrop-blur bg-background/40  p-6 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-2">
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">
-              FortmontAPI
-            </p>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-              Proxy overview
-            </h1>
-            <p className="max-w-2xl text-sm text-muted-foreground md:text-base">
-              Proxy applications pulled from the /api/proxy endpoint.
-            </p>
-          </div>
+    <DashboardPage>
+      <DashboardHero
+        eyebrow="Fortmont API"
+        title="Proxy overview"
+        description="Proxy applications pulled from the /api/proxy endpoint."
+        badge={
           <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-            {apps.length} apps
+            {apps.length} {apps.length === 1 ? "app" : "apps"}
           </span>
-        </div>
-      </section>
+        }
+      />
 
-      <section className="rounded-2xl border border-border/60 backdrop-blur bg-background/40 p-6 shadow-sm">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">Proxy Apps</h2>
-            <p className="text-sm text-muted-foreground">
-              {lastRefreshedAt ? `Last refreshed at ${lastRefreshedAt.toLocaleTimeString()}` : "Loading apps..."}
-            </p>
-          </div>
+      <DashboardSection
+        title="Proxy apps"
+        description={lastRefreshedAt ? `Last refreshed at ${lastRefreshedAt.toLocaleTimeString()}` : "Loading apps..."}
+        actions={
           <Button type="button" variant="outline" onClick={() => void loadProxyApps()} disabled={isRefreshing}>
             <RefreshCwIcon className={isRefreshing ? "size-4 animate-spin" : "size-4"} />
             {isRefreshing ? "Refreshing..." : "Refresh now"}
           </Button>
-          
-        </div>
-
-        <div className="overflow-hidden rounded-xl border border-border/60">
-          <table className="min-w-full table-auto">
-            <thead className="bg-background/0">
-              <tr>
+        }
+      >
+        <div className="overflow-x-auto rounded-xl border border-border/60 bg-background/40 backdrop-blur">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-border/60 bg-muted/50">
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Enabled
                 </th>
@@ -107,31 +97,31 @@ export default function ProxyPage() {
             <tbody>
               {apps.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-6 text-sm text-muted-foreground" colSpan={5}>
-                    No proxy apps found.
+                  <td className="px-4 py-6 text-sm text-muted-foreground text-center" colSpan={5}>
+                    {isRefreshing ? "Fetching proxy routes..." : "No proxy apps found."}
                   </td>
                 </tr>
               ) : (
                 apps.map((app) => (
-                  <tr key={app.id} className="border-t border-border/60">
+                  <tr key={app.id} className="border-b border-border/40 last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 text-sm text-foreground">
-                      <span className={app.enabled ? "rounded-full bg-emerald-500/10 px-2 py-1 text-emerald-600" : "rounded-full bg-destructive/10 px-2 py-1 text-destructive"}>
+                      <span className={app.enabled ? "rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600" : "rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive"}>
                         {app.enabled ? "Yes" : "No"}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-foreground">
-                      {app.entryPoints.length > 0 ? app.entryPoints.join(", ") : "-"}
+                      {app.entryPoints && app.entryPoints.length > 0 ? app.entryPoints.join(", ") : "-"}
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-foreground">{app.id}</td>
-                    <td className="px-4 py-3 text-sm text-foreground">{app.rule}</td>
-                    <td className="px-4 py-3 text-sm text-foreground">{app.target}</td>
+                    <td className="px-4 py-3 text-sm text-foreground max-w-xs truncate" title={app.rule}>{app.rule}</td>
+                    <td className="px-4 py-3 text-sm text-foreground max-w-xs truncate" title={app.target}>{app.target}</td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-      </section>
-    </main>
+      </DashboardSection>
+    </DashboardPage>
   );
 }

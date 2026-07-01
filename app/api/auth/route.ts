@@ -41,6 +41,19 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
+  if (sessionUser?.id) {
+    const currentUser = await prisma.appUsers.findUnique({
+      where: { id: sessionUser.id },
+      select: { role: true, isActive: true },
+    });
+
+    if (!currentUser?.isActive) {
+      return createError("Unauthorized", 401);
+    }
+
+    sessionUser.role = currentUser.role || sessionUser.role || "user";
+  }
+
   if (!sessionUser || !sessionUser.id) {
     return createError("Unauthorized", 401);
   }

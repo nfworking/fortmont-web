@@ -159,7 +159,7 @@ function statusVariant(status: string): "default" | "secondary" | "destructive" 
 function MiniBar({ value, max, color }: { value?: number; max?: number; color: string }) {
   const p = pct(value, max)
   return (
-    <div className="flex items-center gap-2 min-w-[80px]">
+    <div className="flex items-center gap-2 min-w-20">
       <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
         <div className="h-full rounded-full" style={{ width: `${p}%`, background: color }} />
       </div>
@@ -374,7 +374,7 @@ export function DataTable() {
   return (
     <div className="flex flex-col gap-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 lg:px-6">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Input
             placeholder="Filter by name…"
@@ -434,11 +434,11 @@ export function DataTable() {
         </div>
       </div>
 
-      {error && <p className="px-4 text-sm text-destructive lg:px-6">Error: {error}</p>}
-      {loading && <p className="px-4 text-sm text-muted-foreground lg:px-6">Loading…</p>}
+      {error && <p className="text-sm text-destructive">Error: {error}</p>}
+      {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
 
       {/* Table */}
-      <div className="overflow-hidden rounded-lg border mx-4 lg:mx-6">
+      <div className="overflow-hidden rounded-lg border">
         <DndContext
           collisionDetection={closestCenter}
           modifiers={[restrictToVerticalAxis]}
@@ -480,7 +480,7 @@ export function DataTable() {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-4 lg:px-6">
+      <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           {filteredData.length} resource{filteredData.length !== 1 ? "s" : ""}
         </div>
@@ -587,7 +587,7 @@ function TableCellViewer({ item }: { item: ProxmoxResource }) {
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
           {!isMobile && history.length >= 2 && (item.type === "lxc" || item.type === "qemu" || item.type === "node") && (
             <>
-              <ChartContainer config={chartConfig} className="h-[160px] w-full">
+              <ChartContainer config={chartConfig} className="h-40 w-full">
                 <AreaChart data={history} margin={{ left: 0, right: 8 }}>
                   <defs>
                     {(["cpu", "mem", "disk"] as const).map((key, i) => (

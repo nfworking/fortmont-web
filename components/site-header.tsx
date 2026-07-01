@@ -12,32 +12,24 @@ type SiteHeaderProps = {
 
 export function SiteHeader({ title = "LXC and registry information" }: SiteHeaderProps) {
   return (
-    <header className="flex h-(--header-height) shrink-0 items-center border-b">
-  <div className="flex w-full items-center px-4 lg:px-6">
+    <header className="flex h-(--header-height) shrink-0 items-center border-b border-border/60 bg-background/80 backdrop-blur-sm">
+      <div className="flex w-full items-center gap-4 px-4 lg:px-6">
+        <div className="flex min-w-0 items-center gap-2">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
+          <h1 className="truncate text-base font-medium text-foreground">{title}</h1>
+        </div>
 
-    {/* Left */}
-    <div className="flex items-center gap-2">
-      <SidebarTrigger className="-ml-1" />
-      <Separator
-        orientation="vertical"
-        className="mx-2 data-[orientation=vertical]:h-4"
-      />
-      <h1 className="text-base font-medium">{title}</h1>
-    </div>
+        <div className="flex flex-1 justify-center">
+          <CommandDemo />
+        </div>
 
-    {/* Center */}
-    <div className="flex-1 flex justify-center">
-      <CommandDemo />
-    </div>
-
-    {/* Right */}
-    <div className="flex items-center gap-2">
-      <ThemeToggle />
-      <NotificationPanel />
-      <NavUser />
-    </div>
-
-  </div>
-</header>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <NotificationPanel />
+          <NavUser />
+        </div>
+      </div>
+    </header>
   )
 }

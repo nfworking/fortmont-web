@@ -20,7 +20,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ active: true });
   } catch (error) {
     console.error("Session verification failed:", error);
-    // Fail-open or fail-closed depending on your security preference
-    return NextResponse.json({ active: true }); 
+    return NextResponse.json({ active: false });
   }
 }

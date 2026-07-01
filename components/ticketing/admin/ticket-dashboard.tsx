@@ -1,48 +1,24 @@
 'use client';
+
 import * as React from 'react';
-import { format } from 'date-fns';
-import { LayoutGrid, List, Loader2, MessageSquare, Plus, RefreshCw, Send, UserRound } from 'lucide-react';
+import { LayoutGrid, List, Plus, RefreshCw, UserRound } from 'lucide-react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+import { CreateTicketDialog, CreateTicketFormState } from "@/components/ticketing/admin/create-ticket";
+
 import { StatsCards } from './stats-cards';
 import { TicketList } from './ticket-list';
 import { TicketFilters, FilterState } from './ticket-filters';
-import { Comment, Ticket, TicketPriority, TicketStatus, User } from './ticket';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
-import { PriorityBadge } from './priority-badge';
-import { StatusBadge } from './status-badge';
-import { TypeBadge } from './type-badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
-import {CreateTicketDialog, CreateTicketFormState} from "@/components/ticketing/admin/create-ticket";
-import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { Ticket, User, Comment } from './ticket'; // 🔥 FIXED: Added explicit Comment import
+import { TicketDetailSheet } from './ticket-detail-sheet';
 
 interface TicketDashboardProps {
   tickets?: Ticket[];
   users?: User[];
 }
-
-const statuses: TicketStatus[] = ['open', 'in_progress', 'pending', 'resolved', 'closed'];
-const priorities: TicketPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
-
-
-
-
 
 function normalizeStatus(status: Ticket['status']) {
   return (status ?? 'open').toLowerCase();
@@ -92,283 +68,6 @@ function getAvailableUsers(tickets: Ticket[]) {
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="grid grid-cols-[112px_1fr] items-start gap-3 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <div className="min-w-0 text-foreground">{value}</div>
-    </div>
-  );
-}
-
-function UserSummary({ user, fallback }: { user: User | null; fallback: string }) {
-  const name = displayName(user, fallback);
-
-  return (
-    <div className="flex min-w-0 items-center gap-2">
-      <Avatar className={cn('h-8 w-8', !user && 'opacity-60')}>
-        {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={name} />}
-        <AvatarFallback>{initials(name)}</AvatarFallback>
-      </Avatar>
-      <div className="min-w-0">
-        <p className="truncate font-medium">{name}</p>
-        {user?.email && <p className="truncate text-xs text-muted-foreground">{user.email}</p>}
-      </div>
-    </div>
-  );
-}
-
-function formatCommentTime(dateString: string) {
-  const date = new Date(dateString);
-  const diffMs = Date.now() - date.getTime();
-  const diffMin = Math.round(diffMs / 60000);
-
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.round(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.round(diffHr / 24);
-  if (diffDay < 7) return `${diffDay}d ago`;
-
-  return format(date, 'PP');
-}
-
-function CommentItem({ comment, users }: { comment: Comment; users: User[] }) {
-  const resolvedAuthor = comment.author ?? users.find((user) => user.id === comment.authorId) ?? null;
-  const name = displayName(resolvedAuthor, 'Unknown user');
-
-  return (
-    <div className="flex gap-2.5">
-      <Avatar className={cn('h-8 w-8 shrink-0', !resolvedAuthor && 'opacity-60')}>
-        {resolvedAuthor?.avatarUrl && <AvatarImage src={resolvedAuthor.avatarUrl} alt={name} />}
-        <AvatarFallback>{initials(name)}</AvatarFallback>
-      </Avatar>
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex items-baseline gap-2">
-          <span className="truncate text-sm font-medium">{name}</span>
-          <span className="shrink-0 text-xs text-muted-foreground">
-            {formatCommentTime(comment.createdAt)}
-          </span>
-        </div>
-        <p className="whitespace-pre-wrap rounded-lg border bg-muted/30 p-2.5 text-sm leading-6">
-          {comment.text}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function CommentsSection({
-  ticket,
-  users,
-  isSubmitting,
-  onAddComment,
-}: {
-  ticket: Ticket;
-  users: User[];
-  isSubmitting: boolean;
-  onAddComment: (ticket: Ticket, text: string) => Promise<void>;
-}) {
-  const [draft, setDraft] = React.useState('');
-  const comments = ticket.comments ?? [];
-  const sortedComments = React.useMemo(
-    () => [...comments].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
-    [comments]
-  );
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const text = draft.trim();
-    if (!text) return;
-
-    await onAddComment(ticket, text);
-    setDraft('');
-  };
-
-  return (
-    <section className="space-y-3">
-      <h3 className="flex items-center gap-1.5 text-sm font-medium">
-        <MessageSquare className="h-4 w-4" />
-        Comments
-        {sortedComments.length > 0 && (
-          <span className="text-xs font-normal text-muted-foreground">({sortedComments.length})</span>
-        )}
-      </h3>
-
-      {sortedComments.length > 0 ? (
-        <div className="space-y-4">
-          {sortedComments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} users={users} />
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">No comments yet.</p>
-      )}
-
-      <form onSubmit={handleSubmit} className="flex gap-2 pt-1">
-        <Textarea
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder="Add a comment..."
-          className="min-h-10 flex-1 resize-none"
-          disabled={isSubmitting}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault();
-              handleSubmit(event);
-            }
-          }}
-        />
-        <Button type="submit" size="icon" disabled={isSubmitting || !draft.trim()}>
-          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        </Button>
-      </form>
-    </section>
-  );
-}
-
-function TicketDetailSheet({
-  ticket,
-  users,
-  isSubmittingComment,
-  onOpenChange,
-  onUpdate,
-  onAddComment,
-}: {
-  ticket: Ticket | null;
-  users: User[];
-  isSubmittingComment: boolean;
-  onOpenChange: (open: boolean) => void;
-  onUpdate: (ticket: Ticket, updates: Partial<Ticket>) => void;
-  onAddComment: (ticket: Ticket, text: string) => Promise<void>;
-}) {
-  if (!ticket) {
-    return null;
-  }
-
-  return (
-    <Sheet open={Boolean(ticket)} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
-        <SheetHeader className="border-b">
-          <div className="flex flex-wrap items-center gap-2 pr-8">
-            <PriorityBadge priority={ticket.priority} />
-            <StatusBadge status={ticket.status} />
-            <TypeBadge type={ticket.type} />
-          </div>
-          <SheetTitle className="text-xl">{ticket.subject}</SheetTitle>
-          <SheetDescription>
-            {ticket.department}
-          </SheetDescription>
-        </SheetHeader>
-
-        <div className="space-y-6 px-4 pb-4">
-          <section className="space-y-3">
-            <h3 className="text-sm font-medium">Triage</h3>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="space-y-1.5">
-                <span className="text-xs text-muted-foreground">Status</span>
-                <Select
-                  value={normalizeStatus(ticket.status)}
-                  onValueChange={(value) => onUpdate(ticket, { status: value })}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statuses.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {statusLabel(status)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <span className="text-xs text-muted-foreground">Priority</span>
-                <Select
-                  value={ticket.priority}
-                  onValueChange={(value) => onUpdate(ticket, { priority: value as TicketPriority })}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {priorities.map((priority) => (
-                      <SelectItem key={priority} value={priority}>
-                        {priority}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <span className="text-xs text-muted-foreground">Assignee</span>
-                <Select
-                  value={ticket.assignedToId ?? 'unassigned'}
-                  onValueChange={(value) =>
-                    onUpdate(ticket, { assignedToId: value === 'unassigned' ? null : value })
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
-                    {users.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {displayName(user, 'Unknown user')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </section>
-
-          <Separator />
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-medium">Description</h3>
-            <p className="whitespace-pre-wrap rounded-lg border bg-muted/30 p-3 text-sm leading-6">
-              {ticket.description}
-            </p>
-          </section>
-
-          <Separator />
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-medium">People</h3>
-            <DetailRow label="Created by" value={<UserSummary user={ticket.createdBy} fallback="Unknown creator" />} />
-            <DetailRow label="Assigned to" value={<UserSummary user={ticket.assignedTo} fallback="Unassigned" />} />
-          </section>
-
-          <Separator />
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-medium">Timeline</h3>
-            <DetailRow label="Created" value={format(new Date(ticket.createdAt), 'PPpp')} />
-            <DetailRow label="Updated" value={format(new Date(ticket.updatedAt), 'PPpp')} />
-            <DetailRow label="Ticket ID" value={<span className="font-mono text-xs">{ticket.id}</span>} />
-          </section>
-
-          <Separator />
-
-          <CommentsSection
-            ticket={ticket}
-            users={users}
-            isSubmitting={isSubmittingComment}
-            onAddComment={onAddComment}
-          />
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-
-
 export function TicketDashboard({ tickets = [], users: initialUsers = [] }: TicketDashboardProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
@@ -385,22 +84,20 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
   const [selectedTicketId, setSelectedTicketId] = React.useState<string | null>(null);
   const [viewMode, setViewMode] = React.useState<'list' | 'grid'>('list');
   const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
 
   // Listen for changes in the URL query parameters
   React.useEffect(() => {
-    // Check if '?new=true' is in the current URL
     if (searchParams.get('new') === 'true') {
-      setIsCreateDialogOpen(true)
+      setIsCreateDialogOpen(true);
       
-      // Clean up the URL back to just '/tickets' so refreshing doesn't keep popping it open
-      const params = new URLSearchParams(searchParams.toString())
-      params.delete('new')
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('new');
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [searchParams, router, pathname])
+  }, [searchParams, router, pathname]);
 
   const stats = React.useMemo(() => calculateStats(ticketRows), [ticketRows]);
   const users = React.useMemo(() => {
@@ -424,14 +121,6 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
     [selectedTicketId, ticketRows]
   );
 
-  // Real-time comment updates for the currently open ticket via SSE.
-  // The previous version never closed a connection on error, so a dropped
-  // connection would sit half-open while the browser's built-in EventSource
-  // retry kept hitting the endpoint — each attempt left the server's Redis
-  // subscriber for the old connection running until it eventually timed out.
-  // This version explicitly closes the connection on error and reopens it
-  // itself with a short backoff, so there's only ever one live connection
-  // (and one live Redis subscription) per ticket at a time.
   React.useEffect(() => {
     if (!selectedTicketId) return;
 
@@ -453,7 +142,6 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
         try {
           const parsedData = JSON.parse(event.data);
 
-          // Ignore the initial server pipeline verification packet
           if (parsedData?.status === 'connected') {
             return;
           }
@@ -464,7 +152,6 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
             currentRows.map((row) => {
               if (row.id !== selectedTicketId) return row;
 
-              // Safeguard against duplicate comments if the current user authored it
               const commentExists = row.comments?.some((c) => c.id === newComment.id);
               if (commentExists) return row;
 
@@ -480,10 +167,6 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
       };
 
       eventSource.onerror = () => {
-        // Close immediately so the server sees a clean disconnect and tears
-        // down its Redis subscription, rather than leaving a half-open
-        // socket for it to time out on. Reconnect ourselves with backoff
-        // instead of relying on the browser's default (immediate) retry.
         eventSource?.close();
         eventSource = null;
 
@@ -497,7 +180,6 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
 
     connect();
 
-    // Clean up connection instantly when shifting tickets or closing details panel
     return () => {
       cancelled = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
@@ -560,7 +242,7 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
     try {
       const res = await fetch(`/api/ticketing/get/ticket?refresh=${Date.now()}`, {
         cache: 'no-store',
-        credentials: 'include', // <-- FIXED: Moved to top level
+        credentials: 'include',
         headers: { 
           'Cache-Control': 'no-cache' 
         },
@@ -570,8 +252,6 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
       const refreshedTickets = await res.json();
       setTicketRows(refreshedTickets);
     } catch (error) {
-      // Background polling failures shouldn't surface as hard errors —
-      // just log and let the next poll try again.
       console.error('Ticket refresh failed:', error);
       if (!silent) throw error;
     } finally {
@@ -579,10 +259,6 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
     }
   }, []);
 
-  // Auto-refresh the ticket list every few seconds so the queue stays
-  // current without a manual reload. Silent (no spinner) so it doesn't
-  // flicker the UI, and paused while a comment is mid-submit so a poll
-  // can't overwrite the optimistic comment update before the POST resolves.
   const POLL_INTERVAL_MS = 5000;
 
   React.useEffect(() => {
@@ -654,7 +330,6 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
         currentRows.map((row) => {
           if (row.id !== ticket.id) return row;
 
-          // 🔥 FIX: Prevent adding the comment if the Redis stream beat the fetch request to the state
           const commentExists = row.comments?.some((c) => c.id === newComment.id);
           if (commentExists) return row;
 
@@ -714,7 +389,6 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
             </p>
           </div>
           <div className="flex items-center gap-2">
-            
             <Button variant="outline" onClick={() => handleRefresh()} disabled={isLoading}>
               <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
               Refresh
@@ -788,13 +462,14 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
         onUpdate={handleTicketUpdate}
         onAddComment={handleAddComment}
       />
+      
       <CreateTicketDialog
-  open={isCreateDialogOpen}
-  users={users}
-  isSubmitting={isCreatingTicket}
-  onOpenChange={setIsCreateDialogOpen}
-  onSubmit={handleTicketCreate}
-/>
+        open={isCreateDialogOpen}
+        users={users}
+        isSubmitting={isCreatingTicket}
+        onOpenChange={setIsCreateDialogOpen}
+        onSubmit={handleTicketCreate}
+      />
     </div>
   );
 }

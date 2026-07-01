@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
+  CardContent,
   CardAction,
   CardDescription,
   CardFooter,
@@ -58,14 +59,16 @@ export function SectionCards() {
     (bytes / 1024 / 1024 / 1024).toFixed(2);
 
   return resources.length === 0 ? (
-    <div className="flex h-32 items-center justify-center rounded-md border">
-      <p className="text-sm text-muted-foreground">No resources found.</p>
-    </div>
+    <Card className="border-border/60 bg-card/90 shadow-sm">
+      <CardContent className="flex h-32 items-center justify-center px-4">
+        <p className="text-sm text-muted-foreground">No resources found.</p>
+      </CardContent>
+    </Card>
   ) : (
-    <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
 
       {/* Total resources */}
-      <Card>
+      <Card size="sm" className="border-border/60 bg-card/90 shadow-sm">
         <CardHeader>
           <CardDescription>Total Resources</CardDescription>
           <CardTitle>{totalResources}</CardTitle>
@@ -79,7 +82,7 @@ export function SectionCards() {
       </Card>
 
       {/* LXC */}
-      <Card>
+      <Card size="sm" className="border-border/60 bg-card/90 shadow-sm">
         <CardHeader>
           <CardDescription>LXC Containers</CardDescription>
           <CardTitle>{countsByType.lxc || 0}</CardTitle>
@@ -87,7 +90,7 @@ export function SectionCards() {
       </Card>
 
       {/* QEMU */}
-      <Card>
+      <Card size="sm" className="border-border/60 bg-card/90 shadow-sm">
         <CardHeader>
           <CardDescription>VMs (QEMU)</CardDescription>
           <CardTitle>{countsByType.qemu || 0}</CardTitle>
@@ -95,7 +98,7 @@ export function SectionCards() {
       </Card>
 
       {/* Storage */}
-      <Card>
+      <Card size="sm" className="border-border/60 bg-card/90 shadow-sm">
         <CardHeader>
           <CardDescription>Total Disk Usage</CardDescription>
           <CardTitle>

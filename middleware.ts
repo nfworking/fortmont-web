@@ -1,8 +1,33 @@
 import NextAuth from "next-auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { authConfig } from "@/lib/auth.config";
 
 const { auth } = NextAuth(authConfig);
+
+function redirectToLogin(req: NextRequest) {
+  const response = NextResponse.redirect(new URL("/login", req.url));
+
+  const cookiesToClear = [
+    "next-auth.session-token",
+    "__Secure-next-auth.session-token",
+    "__Host-next-auth.session-token",
+    "next-auth.csrf-token",
+    "next-auth.callback-url",
+    "next-auth.state",
+  ];
+
+  cookiesToClear.forEach((cookieName) => {
+    response.cookies.delete(cookieName);
+    response.cookies.set({
+      name: cookieName,
+      value: "",
+      maxAge: 0,
+      path: "/",
+    });
+  });
+
+  return response;
+}
 
 // Common public frontend routes. No need to list "/api/..." routes here.
 const publicRoutes = ["/apps", "/forgot-password", "/reset-password", "/onboard"];
@@ -29,39 +54,12 @@ export default auth(async (req) => {
 
         const { active } = await verifyRes.json();
 
-        if (!active) {
-  // 1. Generate the base redirect response
-  const response = NextResponse.redirect(new URL("/login", req.url));
-  
-  // 2. The explicit list of NextAuth cookies
-  const cookiesToClear = [
-    "next-auth.session-token", 
-    "__Secure-next-auth.session-token", 
-    "__Host-next-auth.session-token", 
-    "next-auth.csrf-token", 
-    "next-auth.callback-url", 
-    "next-auth.state"
-  ];
-  
-  // 3. Clear both response and request layers explicitly
-  cookiesToClear.forEach((cookieName) => {
-    // Tell Chrome to drop it instantly
-    response.cookies.delete(cookieName);
-    
-    // Backup fallback: Set an explicit expired structure
-    response.cookies.set({
-      name: cookieName,
-      value: "",
-      maxAge: 0,
-      path: "/",
-    });
-  });
-
-  return response;
-}
+        if (!verifyRes.ok || !active) {
+          return redirectToLogin(req);
+        }
       } catch (err) {
-        // If the internal API call fails, fail‑open to keep the app functional
         console.error("Middleware session verification fetch failed", err);
+        return redirectToLogin(req);
       }
     }
   }

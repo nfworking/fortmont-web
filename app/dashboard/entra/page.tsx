@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
 import {
   Users, Shield, Monitor, Building2, Server, HardDrive,
   Key, AlertCircle, CheckCircle, RefreshCw, Database,
@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useApiData } from "@/hooks/useApiData";
+import { DashboardHero, DashboardPage } from "@/components/dashboard/page-shell";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,14 +49,6 @@ interface SectionHeaderProps {
   lastFetched: Date | null;
   onRefresh: () => void;
   loading: boolean;
-}
-
-interface UseApiDataResult<T> {
-  data: T | null;
-  loading: boolean;
-  error: string | null;
-  lastFetched: Date | null;
-  refresh: () => void;
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -158,44 +152,6 @@ const LoadingMetrics: React.FC<{ count?: number }> = ({ count = 4 }) => (
     ))}
   </div>
 );
-
-// ── API hook ──────────────────────────────────────────────────────────────────
-
-function useApiData<T>(endpoint: string, params: Record<string, string | number> = {}): UseApiDataResult<T> {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastFetched, setLastFetched] = useState<Date | null>(null);
-
-  const stringParams: Record<string, string> = Object.fromEntries(
-    Object.entries(params).map(([key, val]) => [key, String(val)])
-  );
-  const query = new URLSearchParams(stringParams).toString();
-  const url = `${endpoint}${query ? `?${query}` : ""}`;
-
-  const doFetch = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-      const json = await res.json();
-      setData(json?.value ?? json);
-      setLastFetched(new Date());
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError("An unknown error occurred");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [url]);
-
-  useEffect(() => { doFetch(); }, [doFetch]);
-  return { data, loading, error, lastFetched, refresh: doFetch };
-}
 
 // ── Section header ────────────────────────────────────────────────────────────
 
@@ -309,7 +265,7 @@ function EntraUsers() {
           {loading ? <LoadingRows cols={6} /> : users.slice(0, 50).map((u, i) => (
             <Tr key={u.id ?? i}>
               <Td><span className="font-medium text-black dark:text-white">{u.displayName}</span></Td>
-              <Td><span className="font-mono text-xs text-zinc-500 max-w-[200px] block truncate">{u.userPrincipalName}</span></Td>
+              <Td><span className="font-mono text-xs text-zinc-500 max-w-50 block truncate">{u.userPrincipalName}</span></Td>
               <Td className="text-zinc-400">{u.jobTitle ?? "—"}</Td>
               <Td><span className="text-xs text-zinc-400 bg-muted px-2 py-0.5 rounded-full">{u.userType ?? "Member"}</span></Td>
               <Td><StatusPill value={u.accountEnabled ? "Enabled" : "Disabled"} /></Td>
@@ -363,7 +319,7 @@ function EntraGroups() {
           {loading ? <LoadingRows cols={5} /> : groups.slice(0, 50).map((g, i) => (
             <Tr key={g.id ?? i}>
               <Td><span className="font-medium ext-black dark:text-white">{g.displayName}</span></Td>
-              <Td><span className="text-zinc-500 text-xs max-w-[220px] block truncate">{g.description ?? "—"}</span></Td>
+              <Td><span className="text-zinc-500 text-xs max-w-55 block truncate">{g.description ?? "—"}</span></Td>
               <Td>
                 <div className="flex gap-1 flex-wrap">
                   {g.securityEnabled && <StatusPill value="Security" />}
@@ -545,8 +501,8 @@ function EntraSignInLogs() {
         <TableBody>
           {loading ? <LoadingRows cols={7} /> : logs.slice(0, 50).map((l, i) => (
             <Tr key={l.id ?? i}>
-              <Td><span className="text-white text-xs font-medium max-w-[150px] block truncate">{l.userDisplayName ?? l.userPrincipalName ?? "—"}</span></Td>
-              <Td><span className="text-zinc-400 text-xs max-w-[120px] block truncate">{l.appDisplayName ?? "—"}</span></Td>
+              <Td><span className="text-white text-xs font-medium max-w-37.5 block truncate">{l.userDisplayName ?? l.userPrincipalName ?? "—"}</span></Td>
+              <Td><span className="text-zinc-400 text-xs max-w-30 block truncate">{l.appDisplayName ?? "—"}</span></Td>
               <Td><span className="font-mono text-xs text-zinc-500">{l.ipAddress ?? "—"}</span></Td>
               <Td><span className="text-xs text-zinc-400">{[l.location?.city, l.location?.countryOrRegion].filter(Boolean).join(", ") || "—"}</span></Td>
               <Td><StatusPill value={l.status?.errorCode === 0 ? "Enabled" : "Failed"} /></Td>
@@ -901,10 +857,10 @@ function AzureRoles() {
             const props = (r.properties ?? r) as AzureRoleAssignmentProps;
             return (
               <Tr key={r.id ?? i}>
-                <Td><span className="font-mono text-xs text-zinc-500 max-w-[180px] block truncate">{props.principalId}</span></Td>
+                <Td><span className="font-mono text-xs text-zinc-500 max-w-45 block truncate">{props.principalId}</span></Td>
                 <Td><span className="text-xs text-zinc-400 bg-muted px-2 py-0.5 rounded-full">{props.principalType ?? "—"}</span></Td>
-                <Td><span className="font-mono text-xs text-zinc-400 max-w-[200px] block truncate">{props.roleDefinitionId?.split("/").pop() ?? "—"}</span></Td>
-                <Td><span className="text-xs text-zinc-500 max-w-[200px] block truncate">{props.scope ?? r.scope ?? "—"}</span></Td>
+                <Td><span className="font-mono text-xs text-zinc-400 max-w-50 block truncate">{props.roleDefinitionId?.split("/").pop() ?? "—"}</span></Td>
+                <Td><span className="text-xs text-zinc-500 max-w-50 block truncate">{props.scope ?? r.scope ?? "—"}</span></Td>
               </Tr>
             );
           })}
@@ -943,28 +899,15 @@ const AZURE_TABS: TabConfig[] = [
 
 export default function EntraAzureDashboard() {
   return (
-    
     <TooltipProvider>
-      <div className="bg-background/35 backdrop-blur text-foreground p-4 md:p-6 flex flex-col gap-6 rounded-lg">
+      <DashboardPage className="bg-transparent">
+        <DashboardHero
+          eyebrow="Fortmont API"
+          title="Entra and Azure"
+          description="Identity and cloud inventory data surfaced from the platform APIs."
+        />
+
         <Tabs defaultValue="entra" className="space-y-6">
-         <section className="rounded-2xl border border-border/60 bg-background/0  p-6 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-2">
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">
-              FortmontAPI
-            </p>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-              Certificate overview
-            </h1>
-            <p className="max-w-2xl text-sm text-muted-foreground md:text-base">
-              Certificates pulled from the /api/proxy/certs endpoint.
-            </p>
-          </div>
-          <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-           
-          </span>
-        </div>
-      </section>
           {/* Cloud selector */}
           <TabsList className="w-fit">
             <TabsTrigger value="entra" className="gap-2">
@@ -1012,7 +955,7 @@ export default function EntraAzureDashboard() {
           </TabsContent>
 
         </Tabs>
-      </div>
+      </DashboardPage>
     </TooltipProvider>
   );
 }

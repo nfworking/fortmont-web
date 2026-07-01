@@ -13,6 +13,7 @@ import {
   Computer,
   Database,
   MonitorSmartphone,
+  KeyRound,
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -37,6 +38,7 @@ const NAV_GROUPS = [
     items: [
       { key: "storage", label: "Storage", icon: Database },
       { key: "storage-acc", label: "Storage Account", icon: Database },
+      { key: "platform-api", label: "Platform API", icon: KeyRound },
       { key: "sessions", label: "Sessions", icon: MonitorSmartphone },
     ],
   },

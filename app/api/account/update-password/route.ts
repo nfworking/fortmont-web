@@ -2,6 +2,7 @@ import {prisma} from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import {hashPassword, verifyPassword} from "@/lib/password";
 import { NextRequest, NextResponse } from "next/server";
+import { revokeUserSessions } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,10 +50,8 @@ export async function POST(req: NextRequest) {
       where: { id: session.user.id },
       data: { passwordHash: newPasswordHash },
     });
-   
-    await prisma.userSession.deleteMany({
-      where: { userId: session.user.id },
-    });
+
+    await revokeUserSessions(session.user.id);
     
     return NextResponse.json({ message: "Password updated successfully" });
   } catch (error) {

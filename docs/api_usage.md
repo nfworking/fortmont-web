@@ -33,6 +33,50 @@ This document serves as a template and reference for the application's API endpo
 * Used for Application Authentication (Do not modify).
 ---
 
+## 🧩 Platform API Routes (`/api/platform/*`)
+
+All platform API routes require a valid API key in the `x-api-key` header or as a `Bearer` token in the `Authorization` header.
+Keys are created and managed from `/platform/account` and are stored hashed in the database.
+
+### 🔹 `/api/platform`
+
+* **HTTP GET**
+* *Description*: Returns platform-wide counts and storage totals from the database.
+
+### 🔹 `/api/platform/users`
+
+* **HTTP GET**
+* *Description*: Returns a recent user list with account status and relation counts.
+
+### 🔹 `/api/platform/apps`
+
+* **HTTP GET**
+* *Description*: Returns the platform app registry entries stored in the database.
+
+### 🔹 `/api/platform/storage`
+
+* **HTTP GET**
+* *Description*: Returns per-user storage quotas and usage information.
+
+### 🔹 `/api/platform/sessions`
+
+* **HTTP GET**
+* *Description*: Returns active database-backed user sessions.
+
+### 🔹 `/api/platform/account/keys`
+
+* **HTTP GET**
+* *Description*: Lists the current user's configured API keys.
+* **HTTP POST**
+* *Description*: Creates a new API key and returns the plaintext key once.
+
+### 🔹 `/api/platform/account/keys/:keyId`
+
+* **HTTP DELETE**
+* *Description*: Revokes a configured API key.
+
+---
+
 ## 🌐 Network & Infrastructure Routes
 
 ### 🔹 `/api/dns`

@@ -101,6 +101,51 @@ async function updateLastLogin(userId: string) {
   }
 }
 
+async function loadCurrentAppUser(userId: string) {
+  return prisma.appUsers.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      email: true,
+      role: true,
+      phone: true,
+      avatarUrl: true,
+      isActive: true,
+      isEntraUser: true,
+      onboarded: true,
+    },
+  });
+}
+
+function applyUserClaimsToToken(
+  token: Record<string, unknown>,
+  user: {
+    id: string;
+    username: string;
+    displayName: string | null;
+    email: string | null;
+    role: string | null;
+    phone: string | null;
+    avatarUrl: string | null;
+    isActive: boolean;
+    isEntraUser: boolean | null;
+    onboarded: boolean | null;
+  },
+) {
+  token.sub = user.id;
+  token.name = user.displayName ?? user.username;
+  token.email = user.email ?? undefined;
+  token.username = user.username;
+  token.role = user.role;
+  token.phone = user.phone;
+  token.avatarUrl = user.avatarUrl;
+  token.isActive = user.isActive;
+  token.isEntraUser = user.isEntraUser;
+  token.isOnboarded = user.onboarded;
+}
+
 // ─── Entra profile sync ────────────────────────────────────────────────────────
 
 function normalizeNullableString(value: unknown): string | null | undefined {
@@ -211,6 +256,15 @@ export async function createNewSession(userId: string) {
     lastVerified: Date.now(),
   };
 }
+
+export async function revokeUserSessions(userId: string, keepSessionToken?: string) {
+  await prisma.userSession.deleteMany({
+    where: {
+      userId,
+      ...(keepSessionToken ? { NOT: { sessionToken: keepSessionToken } } : {}),
+    },
+  });
+}
 // ─── NextAuth config ───────────────────────────────────────────────────────────
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -276,16 +330,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           updateLastLogin(syncedUser.id).catch((err) =>
             logError("Failed updating last login (entra)", err),
           );
-          token.sub = syncedUser.id;
-          token.name = syncedUser.displayName ?? syncedUser.username;
-          token.email = syncedUser.email ?? token.email;
-          token.username = syncedUser.username;
-          token.role = syncedUser.role; // Safe extraction
-          token.phone = syncedUser.phone;
-          token.avatarUrl = syncedUser.avatarUrl;
-          token.isActive = syncedUser.isActive;
-          token.isEntraUser = syncedUser.isEntraUser;
-          token.isOnboarded = syncedUser.onboarded;
+          applyUserClaimsToToken(token, syncedUser);
 
           // Register user session
           try {
@@ -315,17 +360,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           updateLastLogin(appUser.id).catch((err) =>
             logError("Failed updating last login (credentials)", err),
           );
-
-          token.sub = appUser.id;
-          token.name = appUser.displayName ?? appUser.username;
-          token.email = appUser.email ?? token.email;
-          token.username = appUser.username;
-          token.role = appUser.role; // Safe extraction
-          token.phone = appUser.phone;
-          token.avatarUrl = appUser.avatarUrl;
-          token.isActive = appUser.isActive;
-          token.isEntraUser = appUser.isEntraUser;
-          token.isOnboarded = appUser.onboarded;
+          applyUserClaimsToToken(token, appUser);
 
           // Register user session
           try {
@@ -387,6 +422,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 data: { lastActive: new Date() },
               }).catch((err) => logError("Failed to update lastActive", err));
             }
+
+            const currentUser = await loadCurrentAppUser(token.sub as string);
+            if (!currentUser || !currentUser.isActive) {
+              log(`User ${token.sub} is inactive or missing during token refresh`);
+              token.sub = undefined;
+              token.error = "UserInactive";
+              return token;
+            }
+
+            applyUserClaimsToToken(token, currentUser);
           } catch (err) {
             logError("Failed to query user session from database", err);
             // Fail-secure or fail-open? In a typical app, we fail-open (allow the request)

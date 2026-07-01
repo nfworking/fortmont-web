@@ -221,7 +221,7 @@ export function ChartAreaInteractive() {
       )}
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3 @xl/card:grid-cols-4 ">
+      <div className="grid grid-cols-2 gap-3 @xl/card:grid-cols-4">
         {[
           {
             label: "Cluster RAM",
@@ -246,21 +246,24 @@ export function ChartAreaInteractive() {
             sub: topMemVm?.name ?? "loading",
           },
         ].map(({ label, value, sub }) => (
-          <div
+          <Card
             key={label}
-            className="rounded-lg bg-muted/50 p-4"
+            size="sm"
+            className="border-border/60 bg-card/90 shadow-sm"
           >
-            <p className="text-xs text-muted-foreground mb-1">{label}</p>
-            <p className="text-2xl font-medium">{value}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
-          </div>
+            <CardHeader>
+              <CardDescription>{label}</CardDescription>
+              <CardTitle className="text-2xl tabular-nums">{value}</CardTitle>
+              <CardDescription className="text-xs">{sub}</CardDescription>
+            </CardHeader>
+          </Card>
         ))}
       </div>
 
       {/* CPU chart */}
       
       {/* Network throughput chart */}
-      <Card className="@container/card">
+      <Card className="@container/card border-border/60 bg-card/90 shadow-sm">
         <CardHeader>
           <CardTitle>Network throughput</CardTitle>
           <CardDescription>KB/s in/out per VM · dashed = upload</CardDescription>
@@ -270,7 +273,7 @@ export function ChartAreaInteractive() {
             <p className="text-sm text-muted-foreground py-4">Collecting data…</p>
           ) : (
             <>
-              <ChartContainer config={netConfig} className="aspect-auto h-[220px] w-full">
+              <ChartContainer config={netConfig} className="aspect-auto h-55 w-full">
                 <LineChart data={netHistory}>
                   <CartesianGrid vertical={false} />
                   <XAxis dataKey="time" tickLine={false} axisLine={false} tickMargin={8} minTickGap={48} />

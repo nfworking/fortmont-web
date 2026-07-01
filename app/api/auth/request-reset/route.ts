@@ -1,9 +1,28 @@
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { sendEmail } from "@/lib/email"; // your email helper
+import { z } from "zod";
+
+const requestResetSchema = z.object({
+  email: z.string().trim().email().transform((value) => value.toLowerCase()),
+});
 
 export async function POST(req: Request) {
-  const { email } = await req.json();
+  let body: unknown;
+
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const parsed = requestResetSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return Response.json({ error: "email is required" }, { status: 400 });
+  }
+
+  const { email } = parsed.data;
 
   const user = await prisma.appUsers.findUnique({
     where: { email },

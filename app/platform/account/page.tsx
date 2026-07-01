@@ -1,4 +1,3 @@
-
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Metadata } from "next";
@@ -6,23 +5,23 @@ import React from "react";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link"
+import Link from "next/link";
 
 import { AccountSettingsSidebar } from "@/components/account/Accountsettingssidebar";
 import { ProfileSection } from "@/components/account/Profilesection";
 import SecuritySection from "@/components/account/Securitysection";
+import { PlatformApiKeysSection } from "@/components/account/PlatformApiKeysSection";
 import { AccountSection } from "@/components/account/Accountsection";
 import { MailboxesSection } from "@/components/account/Mailboxessection";
 import { DevicesSection } from "@/components/account/Devicessection";
 import { GitHubSection } from "@/components/account/Githubsection";
 import { StorageSection } from "@/components/account/Storagesection";
 import { SessionsSection } from "@/components/account/Sessionsection";
-import DashboardPage from "@/components/account/StoragePage"
+import DashboardPage from "@/components/account/StoragePage";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Layout, ArrowUpRightFromSquare } from "lucide-react"
+import { Layout, ArrowUpRightFromSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { NoAvailableToEntraUsers } from "@/components/account/NoAvaiabletoEntraUsers"
-
+import { NoAvailableToEntraUsers } from "@/components/account/NoAvaiabletoEntraUsers";
 
 export const metadata: Metadata = {
   title: "Fortmont · Account",
@@ -31,7 +30,6 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
 
 function formatDate(value: Date) {
   return new Intl.DateTimeFormat("en-AU", {
@@ -50,7 +48,6 @@ function getInitials(value: string | null | undefined) {
     .toUpperCase();
 }
 
-
 type SectionKey =
   | "profile"
   | "account"
@@ -60,7 +57,8 @@ type SectionKey =
   | "github"
   | "storage"
   | "storage-acc"
-  | "sessions";
+  | "sessions"
+  | "platform-api";
 
 const VALID_SECTIONS = new Set<SectionKey>([
   "profile",
@@ -72,13 +70,13 @@ const VALID_SECTIONS = new Set<SectionKey>([
   "storage",
   "storage-acc",
   "sessions",
+  "platform-api",
 ]);
 
 function resolveSection(raw: string | string[] | undefined): SectionKey {
   const s = Array.isArray(raw) ? raw[0] : raw;
   return VALID_SECTIONS.has(s as SectionKey) ? (s as SectionKey) : "profile";
 }
-
 
 interface PageProps {
   searchParams: Promise<{ section?: string | string[] }>;
@@ -160,7 +158,6 @@ export default async function AccountPage({
     user?.displayName ?? user?.username ?? user?.email ?? sessionUser.name,
   );
 
-
   function renderSection() {
     switch (activeSection) {
       case "profile":
@@ -173,43 +170,28 @@ export default async function AccountPage({
             formatDate={formatDate}
           />
         );
-
       case "account":
         return <AccountSection />;
-
-
       case "security":
         if (user?.isEntraUser) {
-
-
-
-
           return <NoAvailableToEntraUsers />;
         }
 
-        // Only accessible if they are NOT an Entra user
         return <SecuritySection />;
-
       case "mailboxes":
         return <MailboxesSection mailboxes={user?.mailboxes ?? []} />;
-
       case "devices":
         return <DevicesSection deviceTokens={user?.deviceTokens ?? []} />;
-
       case "github":
-        return (
-          <GitHubSection
-            githubLink={user?.githubLink}
-
-          />
-        );
-
+        return <GitHubSection githubLink={user?.githubLink} />;
       case "storage":
         return <StorageSection storage={user?.storage} />;
       case "storage-acc":
         return <DashboardPage />;
       case "sessions":
         return <SessionsSection currentSessionId={sessionUser.sessionId} />;
+      case "platform-api":
+        return <PlatformApiKeysSection />;
     }
   }
 

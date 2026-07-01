@@ -1,25 +1,34 @@
 
 
-import { Metadata } from "next";
-import { SectionCards } from "@/components/section-cards"
-import { ChartAreaInteractive} from "@/components/chart-area-interactive"
-import { DataTable } from "@/components/data-table"
-
-import data from "./data.json"
-
+import { ChartAreaInteractive } from "@/components/chart-area-interactive";
+import { DataTable } from "@/components/data-table";
+import { DashboardHero, DashboardPage, DashboardSection } from "@/components/dashboard/page-shell";
+import { SectionCards } from "@/components/section-cards";
 
 export default function Page() {
   return (
-    <div className="flex flex-1 flex-col ">
-          <div className="@container/main flex flex-1 flex-col gap-2 ">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 ">
- 
-              <div className="px-4 lg:px-6 ">
-                <ChartAreaInteractive />
-              </div>
-              <DataTable />
-            </div>
-          </div>
-        </div>
+    <DashboardPage>
+      <DashboardHero
+        eyebrow="Fortmont API"
+        title="Dashboard"
+        description="A consistent overview of platform health, Proxmox resources, and resource activity."
+      />
+
+      <SectionCards />
+
+      <DashboardSection
+        title="Cluster activity"
+        description="Live CPU, memory, and network trends from the Proxmox cluster."
+      >
+        <ChartAreaInteractive />
+      </DashboardSection>
+
+      <DashboardSection
+        title="Resource inventory"
+        description="Search, filter, and reorder the resources currently exposed by the API."
+      >
+        <DataTable />
+      </DashboardSection>
+    </DashboardPage>
   );
 }
