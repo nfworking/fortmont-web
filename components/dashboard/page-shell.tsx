@@ -42,7 +42,7 @@ export function DashboardHero({
 }: DashboardHeroProps) {
   return (
     <section className={cn("rounded-2xl border border-border/60 bg-card/90 p-6 shadow-sm backdrop-blur-sm", className)}>
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className="flex flex-row gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-2">
           {eyebrow ? (
             <p className="text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">
@@ -79,7 +79,7 @@ export function DashboardSection({
 }: DashboardSectionProps) {
   return (
     <section className={cn("rounded-2xl border border-border/60 bg-card/90 p-6 shadow-sm backdrop-blur-sm", className)}>
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-4 flex flex-row gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
           <h2 className="text-xl font-semibold text-foreground">{title}</h2>
           {description ? (

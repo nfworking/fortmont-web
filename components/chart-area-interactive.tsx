@@ -2,27 +2,36 @@
 
 import * as React from "react"
 import {
-  Area,
-  AreaChart,
   CartesianGrid,
   XAxis,
   YAxis,
   Line,
   LineChart,
 } from "recharts"
+import { cn } from "@/lib/utils"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardAction,
 } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
+import {
+  Activity,
+  Cpu,
+  MemoryStick,
+  Server,
+  TrendingUp,
+  RefreshCw,
+} from "lucide-react"
 
 interface ProxmoxResource {
   type: string
@@ -71,12 +80,6 @@ function formatBytes(bytes: number) {
   return Math.round(bytes / 1024) + " KB"
 }
 
-function formatMbps(bytesPerSec: number) {
-  if (bytesPerSec >= 1048576) return (bytesPerSec / 1048576).toFixed(1) + " MB/s"
-  if (bytesPerSec >= 1024) return Math.round(bytesPerSec / 1024) + " KB/s"
-  return Math.round(bytesPerSec) + " B/s"
-}
-
 interface NodeStats {
   totalRam: number
   maxRam: number
@@ -86,17 +89,47 @@ interface NodeStats {
   totalVms: number
 }
 
+// ── Small stat card, matching SectionCards/SystemStatusPanel language ──────
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  icon: React.ElementType
+  label: string
+  value: string
+  sub: string
+  accent?: string
+}) {
+  return (
+    <Card className="border-border/60 bg-card/90 shadow-sm backdrop-blur-sm">
+      <CardHeader className="gap-1">
+        <div className="flex items-center gap-2">
+          <Icon className="size-3.5 text-muted-foreground" />
+          <CardDescription className="text-xs">{label}</CardDescription>
+        </div>
+        <CardTitle className={cn("text-2xl tabular-nums", accent)}>{value}</CardTitle>
+        <CardDescription className="text-[11px] text-muted-foreground/80">{sub}</CardDescription>
+      </CardHeader>
+    </Card>
+  )
+}
+
 export function ChartAreaInteractive() {
-  const [cpuHistory, setCpuHistory] = React.useState<TimePoint[]>([])
   const [netHistory, setNetHistory] = React.useState<TimePoint[]>([])
   const [vmNames, setVmNames] = React.useState<string[]>([])
   const [nodeStats, setNodeStats] = React.useState<NodeStats | null>(null)
   const [topMemVm, setTopMemVm] = React.useState<{ name: string; pct: number } | null>(null)
   const [error, setError] = React.useState<string | null>(null)
+  const [refreshing, setRefreshing] = React.useState(false)
   const prevNetRef = React.useRef<Record<string, { netin: number; netout: number }>>({})
   const prevTimeRef = React.useRef<number>(0)
 
-  const fetchAndAppend = React.useCallback(async () => {
+  const fetchAndAppend = React.useCallback(async (manual = false) => {
+    if (manual) setRefreshing(true)
     try {
       const res = await fetch("/api/proxmox/resources")
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -108,7 +141,6 @@ export function ChartAreaInteractive() {
       )
       const nodes = all.filter((d) => d.type === "node")
 
-      // node stat cards
       const totalRam = nodes.reduce((s, n) => s + (n.mem ?? 0), 0)
       const maxRam = nodes.reduce((s, n) => s + (n.maxmem ?? 0), 0)
       const totalCpu = nodes.reduce((s, n) => s + (n.cpu ?? 0) * (n.maxcpu ?? 1), 0)
@@ -118,7 +150,6 @@ export function ChartAreaInteractive() {
 
       setNodeStats({ totalRam, maxRam, totalCpu, maxCpu, runningVms, totalVms })
 
-      // top mem consumer
       const sorted = [...vms].sort((a, b) => b.mem / b.maxmem - a.mem / a.maxmem)
       if (sorted.length > 0) {
         setTopMemVm({
@@ -140,15 +171,6 @@ export function ChartAreaInteractive() {
         second: "2-digit",
       })
 
-      // cpu point
-      const cpuPoint: TimePoint = { time: timeLabel }
-      for (const vm of vms) {
-        cpuPoint[shortName(vm.name, vm.vmid)] = parseFloat(
-          (vm.cpu * 100).toFixed(1)
-        )
-      }
-
-      // net throughput point (diff from last poll)
       const netPoint: TimePoint = { time: timeLabel }
       for (const vm of vms) {
         const key = String(vm.vmid)
@@ -156,20 +178,11 @@ export function ChartAreaInteractive() {
         if (prev && elapsed) {
           const inRate = Math.max(0, (vm.netin - prev.netin) / elapsed)
           const outRate = Math.max(0, (vm.netout - prev.netout) / elapsed)
-          netPoint[shortName(vm.name, vm.vmid) + "_in"] = parseFloat(
-            (inRate / 1024).toFixed(1)
-          )
-          netPoint[shortName(vm.name, vm.vmid) + "_out"] = parseFloat(
-            (outRate / 1024).toFixed(1)
-          )
+          netPoint[shortName(vm.name, vm.vmid) + "_in"] = parseFloat((inRate / 1024).toFixed(1))
+          netPoint[shortName(vm.name, vm.vmid) + "_out"] = parseFloat((outRate / 1024).toFixed(1))
         }
         prevNetRef.current[key] = { netin: vm.netin, netout: vm.netout }
       }
-
-      setCpuHistory((prev) => {
-        const next = [...prev, cpuPoint]
-        return next.length > MAX_POINTS ? next.slice(-MAX_POINTS) : next
-      })
 
       if (elapsed) {
         setNetHistory((prev) => {
@@ -181,6 +194,8 @@ export function ChartAreaInteractive() {
       setError(null)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Unknown error")
+    } finally {
+      if (manual) setRefreshing(false)
     }
   }, [])
 
@@ -189,14 +204,6 @@ export function ChartAreaInteractive() {
     const id = setInterval(fetchAndAppend, POLL_INTERVAL)
     return () => clearInterval(id)
   }, [fetchAndAppend])
-
-  const cpuConfig = React.useMemo(() => {
-    const config: ChartConfig = {}
-    vmNames.forEach((name, i) => {
-      config[name] = { label: name, color: COLORS[i % COLORS.length] }
-    })
-    return config
-  }, [vmNames])
 
   const netConfig = React.useMemo(() => {
     const config: ChartConfig = {}
@@ -207,80 +214,100 @@ export function ChartAreaInteractive() {
     return config
   }, [vmNames])
 
-  const ramPct = nodeStats
-    ? Math.round((nodeStats.totalRam / nodeStats.maxRam) * 100)
-    : 0
-  const cpuPct = nodeStats
-    ? Math.round((nodeStats.totalCpu / nodeStats.maxCpu) * 100)
-    : 0
+  const ramPct = nodeStats ? Math.round((nodeStats.totalRam / nodeStats.maxRam) * 100) : 0
+  const cpuPct = nodeStats ? Math.round((nodeStats.totalCpu / nodeStats.maxCpu) * 100) : 0
+  const hasData = netHistory.length >= 2
 
   return (
     <div className="flex flex-col gap-4">
       {error && (
-        <p className="text-sm text-destructive">Error: {error}</p>
+        <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          {error}
+        </div>
       )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3 @xl/card:grid-cols-4">
-        {[
-          {
-            label: "Cluster RAM",
-            value: nodeStats ? `${ramPct}%` : "—",
-            sub: nodeStats
-              ? `${formatBytes(nodeStats.totalRam)} / ${formatBytes(nodeStats.maxRam)}`
-              : "loading",
-          },
-          {
-            label: "Cluster CPU",
-            value: nodeStats ? `${cpuPct}%` : "—",
-            sub: nodeStats ? `across ${nodeStats.maxCpu} cores` : "loading",
-          },
-          {
-            label: "VMs running",
-            value: nodeStats ? `${nodeStats.runningVms}` : "—",
-            sub: nodeStats ? `of ${nodeStats.totalVms} total` : "loading",
-          },
-          {
-            label: "Top mem user",
-            value: topMemVm ? `${topMemVm.pct}%` : "—",
-            sub: topMemVm?.name ?? "loading",
-          },
-        ].map(({ label, value, sub }) => (
-          <Card
-            key={label}
-            size="sm"
-            className="border-border/60 bg-card/90 shadow-sm"
-          >
-            <CardHeader>
-              <CardDescription>{label}</CardDescription>
-              <CardTitle className="text-2xl tabular-nums">{value}</CardTitle>
-              <CardDescription className="text-xs">{sub}</CardDescription>
-            </CardHeader>
-          </Card>
-        ))}
+        <StatCard
+          icon={MemoryStick}
+          label="Cluster RAM"
+          value={nodeStats ? `${ramPct}%` : "—"}
+          sub={nodeStats ? `${formatBytes(nodeStats.totalRam)} / ${formatBytes(nodeStats.maxRam)}` : "Loading…"}
+          accent={ramPct > 80 ? "text-red-500" : ramPct > 60 ? "text-amber-500" : undefined}
+        />
+        <StatCard
+          icon={Cpu}
+          label="Cluster CPU"
+          value={nodeStats ? `${cpuPct}%` : "—"}
+          sub={nodeStats ? `Across ${nodeStats.maxCpu} cores` : "Loading…"}
+          accent={cpuPct > 80 ? "text-red-500" : cpuPct > 60 ? "text-amber-500" : undefined}
+        />
+        <StatCard
+          icon={Server}
+          label="VMs Running"
+          value={nodeStats ? `${nodeStats.runningVms}` : "—"}
+          sub={nodeStats ? `of ${nodeStats.totalVms} total` : "Loading…"}
+        />
+        <StatCard
+          icon={TrendingUp}
+          label="Top Mem User"
+          value={topMemVm ? `${topMemVm.pct}%` : "—"}
+          sub={topMemVm?.name ?? "Loading…"}
+          accent={topMemVm && topMemVm.pct > 85 ? "text-red-500" : undefined}
+        />
       </div>
 
-      {/* CPU chart */}
-      
       {/* Network throughput chart */}
-      <Card className="@container/card border-border/60 bg-card/90 shadow-sm">
+      <Card className="@container/card border-border/60 bg-card/90 shadow-sm backdrop-blur-sm">
         <CardHeader>
-          <CardTitle>Network throughput</CardTitle>
-          <CardDescription>KB/s in/out per VM · dashed = upload</CardDescription>
+          <div className="flex items-center gap-2">
+            <Activity className="size-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Network Throughput</CardTitle>
+          </div>
+          <CardDescription className="text-xs">
+            KB/s in / out per VM · dashed line = upload
+          </CardDescription>
+          <CardAction className="flex items-center gap-1.5">
+            <Badge variant="outline" className="text-[10px] px-2 py-0.5">
+              {hasData ? "Live" : "Collecting"}
+            </Badge>
+            <button
+              onClick={() => fetchAndAppend(true)}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Refresh chart"
+            >
+              <RefreshCw className={cn("size-3.5", refreshing && "animate-spin")} />
+            </button>
+          </CardAction>
         </CardHeader>
-        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-          {netHistory.length < 2 ? (
-            <p className="text-sm text-muted-foreground py-4">Collecting data…</p>
+
+        <CardContent className="px-2 pt-2 sm:px-6">
+          {!hasData ? (
+            <div className="flex h-40 items-center justify-center rounded-lg border border-border/50 bg-background/40">
+              <p className="text-sm text-muted-foreground">Collecting data…</p>
+            </div>
           ) : (
-            <>
+            <div className="rounded-lg border border-border/50 bg-background/40 p-3">
               <ChartContainer config={netConfig} className="aspect-auto h-55 w-full">
                 <LineChart data={netHistory}>
                   <CartesianGrid vertical={false} />
                   <XAxis dataKey="time" tickLine={false} axisLine={false} tickMargin={8} minTickGap={48} />
-                  <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(v) => `${v} KB/s`} width={72} />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tickFormatter={(v) => `${v} KB/s`}
+                    width={72}
+                  />
                   <ChartTooltip
                     cursor={false}
-                    content={<ChartTooltipContent labelFormatter={(v) => v} formatter={(v) => `${v} KB/s`} indicator="dot" />}
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={(v) => v}
+                        formatter={(v) => `${v} KB/s`}
+                        indicator="dot"
+                      />
+                    }
                   />
                   {vmNames.map((name, i) => (
                     <React.Fragment key={name}>
@@ -304,7 +331,7 @@ export function ChartAreaInteractive() {
                 </LineChart>
               </ChartContainer>
               <Legend names={vmNames} dashed />
-            </>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -313,8 +340,10 @@ export function ChartAreaInteractive() {
 }
 
 function Legend({ names, dashed }: { names: string[]; dashed?: boolean }) {
+  if (names.length === 0) return null
+
   return (
-    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 border-t border-border/40 pt-3">
       {names.map((name, i) => (
         <span key={name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span
@@ -325,7 +354,8 @@ function Legend({ names, dashed }: { names: string[]; dashed?: boolean }) {
                 : { background: COLORS[i % COLORS.length] }
             }
           />
-          {name}{dashed ? " ↓/↑" : ""}
+          {name}
+          {dashed ? " ↓/↑" : ""}
         </span>
       ))}
     </div>

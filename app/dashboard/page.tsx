@@ -4,6 +4,8 @@ import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import { DataTable } from "@/components/data-table";
 import { DashboardHero, DashboardPage, DashboardSection } from "@/components/dashboard/page-shell";
 import { SectionCards } from "@/components/section-cards";
+import { SystemStatusPanel } from "@/components/dashboard_res/status";
+import TicketOverviewCard from "@/components/dashboard_res/ticket_overview";
 
 export default function Page() {
   return (
@@ -13,15 +15,12 @@ export default function Page() {
         title="Dashboard"
         description="A consistent overview of platform health, Proxmox resources, and resource activity."
       />
-
-      <SectionCards />
-
-      <DashboardSection
-        title="Cluster activity"
-        description="Live CPU, memory, and network trends from the Proxmox cluster."
-      >
-        <ChartAreaInteractive />
-      </DashboardSection>
+      <div className=" gap-10 sm:flex flex-row  ">
+     
+      <SystemStatusPanel />
+       <SectionCards />
+       <TicketOverviewCard />
+      </div>
 
       <DashboardSection
         title="Resource inventory"
