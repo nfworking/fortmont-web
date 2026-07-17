@@ -25,7 +25,8 @@ import {
   ServerIcon, 
   UsersIcon,
   AlertTriangle, 
-  Database
+  Database,
+  EthernetPort
 } from "lucide-react"
 
 // Import your Dialog UI components here (assuming standard shadcn/ui setup)
@@ -92,6 +93,7 @@ const data = {
       url: "/my-storage",
       icon: <Database />,
     },
+    { title: "Unifi", url: "/dashboard/unifi", icon: <EthernetPort /> },
     {
       title: "Tickets",
       url: "/admin_ticketing/dashboard",
