@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import {
   UnifiApiError,
   getAppInfo,
+  getBandwidthSummary,
   getDeviceStatisticsBatch,
+  getLegacyDeviceStats,
   listClients,
   listDevices,
   listSites,
@@ -26,7 +29,6 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(req: NextRequest) {
   
-
   const requestedSiteId = req.nextUrl.searchParams.get("siteId") ?? undefined;
 
   try {
@@ -37,10 +39,14 @@ export async function GET(req: NextRequest) {
 
     const siteId = requestedSiteId ?? (await resolveSiteId());
 
-    const [devicesPage, clientsPage] = await Promise.all([
+    const [devicesPage, clientsPage, legacyResponse] = await Promise.all([
       listDevices(siteId),
       listClients(siteId),
+      getLegacyDeviceStats().catch(() => null),
     ]);
+
+    const legacyDevices = legacyResponse?.data ?? [];
+    const bandwidth = await getBandwidthSummary(legacyDevices);
 
     const deviceStats = await getDeviceStatisticsBatch(
       siteId,
@@ -63,6 +69,8 @@ export async function GET(req: NextRequest) {
       devices: devicesPage.data,
       clients: clientsPage.data,
       deviceStats,
+      bandwidth,
+      legacyDevices,
       summary: {
         totalDevices: devicesPage.data.length,
         onlineDevices: onlineDevices.length,
@@ -91,7 +99,7 @@ export async function GET(req: NextRequest) {
  * unauthenticated bearer-less requests.
  */
 export async function POST(req: NextRequest) {
- 
+  
 
   let body: { siteId?: string; deviceId?: string; action?: UnifiActionRequest["action"] };
   try {

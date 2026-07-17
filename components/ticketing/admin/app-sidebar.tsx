@@ -18,30 +18,54 @@ import { CloudIcon, CommandIcon, DatabaseIcon, GlobeLock, LayoutDashboardIcon, M
 
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "Fortmont",
+    email: "admin@fortmont.com",
+    avatar: "/avatars/fortmont.jpg",
   },
   navMain: [
     {
       title: "Dashboard",
       url: "/admin_ticketing/dashboard",
       icon: (
-        <LayoutDashboardIcon
-        />
+        <LayoutDashboardIcon />
       ),
     },
     {
       title: "Request Forms",
       url: "/admin_ticketing/dashboard/forms",
       icon: (
-        <MailIcon
-        />
+        <MailIcon />
       ),
-    }
-  
-  
-    ],
+    },
+    {
+      title: "Open Tickets",
+      url: "/admin_ticketing/open",
+      icon: (
+        <MailIcon />
+      ),
+    },
+    {
+      title: "Archived Issues",
+      url: "/admin_ticketing/archived",
+      icon: (
+        <MailIcon />
+      ),
+    },
+    {
+      title: "SLA Reports",
+      url: "/admin_ticketing/reports",
+      icon: (
+        <MailIcon />
+      ),
+    },
+    {
+      title: "Escalations",
+      url: "/admin_ticketing/escalations",
+      icon: (
+        <MailIcon />
+      ),
+    },
+  ],
 }
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
@@ -59,7 +83,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg" className="data-[slot=sidebar-menu-button]:p-1.5!">
-              <Link href="/dashboard">
+              <Link href="/admin_ticketing/dashboard">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-sm bg-primary">
                   <CommandIcon className="size-5 text-primary-foreground" />
                 </div>

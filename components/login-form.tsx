@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils"
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button"
 import {
   Field,
@@ -26,15 +27,7 @@ const loadingSteps = [
   { title: "Almost Ready",      sub: "Preparing your Fortmont dashboard..." },
 ];
 
-const floatingBlocks = [
-  { size: 52, color: "#534AB7", top: "18%", left: "8%",  anim: "blockFloat  3.2s ease-in-out infinite 0s"   },
-  { size: 36, color: "#1D9E75", top: "12%", left: "78%", anim: "blockFloat2 2.8s ease-in-out infinite 0.4s" },
-  { size: 28, color: "#D85A30", top: "55%", left: "88%", anim: "blockFloat3 3.6s ease-in-out infinite 0.8s" },
-  { size: 44, color: "#378ADD", top: "70%", left: "5%",  anim: "blockFloat2 3s   ease-in-out infinite 1.2s" },
-  { size: 20, color: "#D4537E", top: "30%", left: "90%", anim: "blockFloat  2.6s ease-in-out infinite 0.6s" },
-  { size: 32, color: "#BA7517", top: "80%", left: "72%", anim: "blockFloat3 3.4s ease-in-out infinite 1.6s" },
-  { size: 18, color: "#0F6E56", top: "8%",  left: "40%", anim: "blockFloat  4s   ease-in-out infinite 2s"   },
-];
+
 
 const logoColors = ["#534AB7", "#1D9E75", "#378ADD", "#D85A30"];
 
@@ -43,7 +36,6 @@ export function LoginForm({ className, callbackUrl, ...props }: LoginFormProps) 
   const [isLoading2, setIsLoading2]   = useState(false);
   const [isSplashing, setIsSplashing] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
-  const [stepVisible, setStepVisible] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
@@ -54,11 +46,7 @@ export function LoginForm({ className, callbackUrl, ...props }: LoginFormProps) 
   const router = useRouter();
 
   const cycleStep = (index: number) => {
-    setStepVisible(false);
-    setTimeout(() => {
-      setLoadingStep(index);
-      setStepVisible(true);
-    }, 250);
+    setLoadingStep(index);
   };
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -176,74 +164,80 @@ export function LoginForm({ className, callbackUrl, ...props }: LoginFormProps) 
   // --- SPLASH SCREEN ---
   if (isSplashing) {
     return (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
-        style={{ background: "#000", animation: "fadeIn 0.3s ease forwards" }}
-      >
-        {floatingBlocks.map((b, i) => (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              width: b.size,
-              height: b.size,
-              background: b.color,
-              top: b.top,
-              left: b.left,
-              borderRadius: 10,
-              animation: b.anim,
-            }}
-          />
-        ))}
-
-        <div className="relative z-10 flex flex-col items-center gap-5 text-center max-w-xs px-6">
-          {/* Logo mark */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 2 }}>
-            {logoColors.map((c, i) => (
-              <div key={i} style={{ width: 14, height: 14, borderRadius: 3, background: c }} />
-            ))}
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950 select-none">
+        <div className="relative z-10 flex flex-col items-center gap-6 text-center max-w-xs w-full px-6">
+          
+          {/* Elegant Circular Spinner & Logo */}
+          <div className="relative flex items-center justify-center w-16 h-16">
+            {/* Minimalist Spinner Ring */}
+            <svg className="animate-spin w-16 h-16 text-zinc-800" viewBox="0 0 50 50">
+              <circle
+                cx="25"
+                cy="25"
+                r="21"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+                className="opacity-20"
+              />
+              <path
+                d="M 25 4 A 21 21 0 0 1 46 25"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                fill="none"
+                className="text-zinc-400 opacity-80"
+              />
+            </svg>
+            
+            {/* Static Minimalist Brand Logo in Center */}
+            <div className="absolute grid grid-cols-2 gap-1">
+              {logoColors.map((c, i) => (
+                <div
+                  key={i}
+                  className="w-2.5 h-2.5 rounded-[2px]"
+                  style={{ background: c }}
+                />
+              ))}
+            </div>
           </div>
-          <p style={{ fontSize: 10, letterSpacing: "0.14em", color: "#555", textTransform: "uppercase", margin: 0 }}>
+
+          {/* Branding Subtitle */}
+          <span className="text-[10px] uppercase tracking-[0.25em] text-zinc-600 font-medium -mt-2">
             Fortmont
-          </p>
+          </span>
 
-          {/* Cycling text */}
-          <div style={{ transition: "opacity 0.25s ease", opacity: stepVisible ? 1 : 0 }}>
-            <h2 className="text-xl font-medium text-white mb-1">
-              {loadingSteps[loadingStep].title}
-            </h2>
-            <p style={{ fontSize: 13, color: "#ffffff", margin: 0 }}>
-              {loadingSteps[loadingStep].sub}
-            </p>
+          {/* Cycling text with premium slide/fade/blur animations */}
+          <div className="h-14 flex items-center justify-center w-full">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={loadingStep}
+                initial={{ opacity: 0, y: 6, filter: "blur(3px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -6, filter: "blur(3px)" }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="space-y-1"
+              >
+                <h2 className="text-sm font-medium text-zinc-200">
+                  {loadingSteps[loadingStep].title}
+                </h2>
+                <p className="text-xs text-zinc-500">
+                  {loadingSteps[loadingStep].sub}
+                </p>
+              </motion.div>
+            </AnimatePresence>
           </div>
 
-          {/* Progress bar */}
-          <div style={{ width: "100%", height: 2, background: "#1a1a1a", borderRadius: 99, overflow: "hidden" }}>
-            <div
-              style={{
-                height: "100%",
-                background: "#534AB7",
-                borderRadius: 99,
-                animation: "loadingProgress 12s ease-out forwards",
-              }}
+          {/* Minimalist Thin Progress Bar */}
+          <div className="w-full h-[2px] bg-zinc-900 rounded-full overflow-hidden mt-2">
+            <motion.div
+              className="h-full bg-zinc-300 rounded-full"
+              initial={{ width: "0%" }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 12, ease: "easeInOut" }}
             />
           </div>
-
-          {/* Dot pulse */}
-          <div style={{ display: "flex", gap: 6 }}>
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: "#534AB7",
-                  animation: `dotPulse 1.4s ease-in-out infinite ${i * 0.2}s`,
-                }}
-              />
-            ))}
-          </div>
+          
         </div>
       </div>
     );

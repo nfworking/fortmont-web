@@ -379,8 +379,8 @@ export function TicketDashboard({ tickets = [], users: initialUsers = [] }: Tick
   };
 
   return (
-    <div className="min-h-screen bg-transparent transition-colors duration-300">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background pt-4 px-15 pl-8">
+        <div className="mx-4 w-full h-full rounded-xl border bg-card p-6 shadow-sm">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Ticket Queue</h1>

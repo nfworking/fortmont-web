@@ -249,10 +249,10 @@ export function TicketList({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-card">
+    <div className="overflow-hidden rounded-xl bg-card/80 backdrop-blur-lg border border-border shadow-sm">
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted/40 hover:bg-muted/40">
+          <TableRow className="bg-muted/30 hover:bg-muted/20 transition-colors rounded-md">
             <TableHead className="w-[108px]">
               <SortButton sortKey="priority" activeKey={sortKey} direction={sortDirection} onSort={handleSort}>
                 Priority

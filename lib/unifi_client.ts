@@ -3,9 +3,12 @@ import { Agent } from "undici";
 import type {
   UnifiActionRequest,
   UnifiAppInfo,
+  UnifiBandwidthSummary,
   UnifiClientOverview,
   UnifiDeviceOverview,
   UnifiDeviceStatistics,
+  UnifiLegacyDevice,
+  UnifiLegacyDeviceResponse,
   UnifiPage,
   UnifiSite,
 } from "./unifi_types";
@@ -23,7 +26,15 @@ const API_KEY = process.env.UNIFI_API_KEY;
 const DEFAULT_SITE_ID = process.env.UNIFI_SITE_ID;
 const ALLOW_SELF_SIGNED = process.env.UNIFI_ALLOW_SELF_SIGNED === "true";
 
+// The legacy stat/device endpoint is keyed by site *name* (e.g. "default"),
+// not the UUID the documented Integration API uses for siteId — these are
+// usually different strings, so they get their own env var.
+const LEGACY_SITE_NAME = process.env.UNIFI_LEGACY_SITE_NAME || "default";
+
 const INTEGRATION_PATH = "/proxy/network/integration/v1";
+// Undocumented local controller API — same console, same X-API-KEY auth,
+// but not part of the public Integration API and can change without notice.
+const LEGACY_API_PATH = "/proxy/network/api";
 
 // Local UniFi OS consoles typically present a self-signed cert. Reuse a single
 // dispatcher so we're not re-negotiating TLS on every request.
@@ -78,6 +89,82 @@ async function unifiFetch<T>(
 
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
+}
+
+async function legacyFetch<T>(path: string): Promise<T> {
+  assertConfigured();
+
+  const res = await fetch(`${BASE_URL}${LEGACY_API_PATH}${path}`, {
+    headers: { "X-API-KEY": API_KEY as string, Accept: "application/json" },
+    // @ts-expect-error - undici-specific option, valid on Node's global fetch
+    dispatcher: insecureAgent,
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new UnifiApiError(
+      `UniFi legacy API ${res.status} on ${path}: ${body || res.statusText}`,
+      res.status,
+    );
+  }
+  return (await res.json()) as T;
+}
+
+/**
+ * Cumulative + rate byte counters per device, straight from the local
+ * controller (undocumented `stat/device` endpoint). This is what actually
+ * backs the traffic totals shown in the mobile app — the public Integration
+ * API only exposes instantaneous bit rates, not accumulated bytes.
+ */
+export function getLegacyDeviceStats(): Promise<UnifiLegacyDeviceResponse> {
+  return legacyFetch<UnifiLegacyDeviceResponse>(
+    `/s/${LEGACY_SITE_NAME}/stat/device`,
+  );
+}
+
+/**
+ * Rolls the legacy per-device counters up into a site-wide bandwidth
+ * summary. Sums each device's uplink port, which is the closest available
+ * approximation of site-wide throughput without a dedicated WAN health
+ * endpoint — on a single-gateway site this is effectively WAN traffic; on
+ * a multi-switch topology it can double-count LAN-to-LAN hops.
+ */
+export async function getBandwidthSummary(
+  prefetchedDevices?: UnifiLegacyDevice[],
+): Promise<UnifiBandwidthSummary> {
+  try {
+    const data = prefetchedDevices || (await getLegacyDeviceStats()).data;
+    let downRateBps = 0;
+    let upRateBps = 0;
+    let totalDownBytes = 0;
+    let totalUpBytes = 0;
+
+    for (const device of data) {
+      const uplink = device.uplink;
+      downRateBps += uplink?.["rx_bytes-r"] ?? 0;
+      upRateBps += uplink?.["tx_bytes-r"] ?? 0;
+      totalDownBytes += uplink?.rx_bytes ?? device.rx_bytes ?? 0;
+      totalUpBytes += uplink?.tx_bytes ?? device.tx_bytes ?? 0;
+    }
+
+    return {
+      available: true,
+      // rate fields are Bytes/sec -> Mbps
+      downRateMbps: Math.round(((downRateBps * 8) / 1_000_000) * 10) / 10,
+      upRateMbps: Math.round(((upRateBps * 8) / 1_000_000) * 10) / 10,
+      totalDownBytes,
+      totalUpBytes,
+    };
+  } catch {
+    return {
+      available: false,
+      downRateMbps: 0,
+      upRateMbps: 0,
+      totalDownBytes: 0,
+      totalUpBytes: 0,
+    };
+  }
 }
 
 export function getAppInfo(): Promise<UnifiAppInfo> {

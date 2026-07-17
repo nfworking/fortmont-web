@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
-import TransitionLayout from "@/components/transitionlayout";
+
 import { BlurProvider } from "@/components/blur-provider";
 
 const geistSans = Geist({
@@ -34,9 +34,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         <Toaster />
         <BlurProvider>
-          <TransitionLayout>
-            <Providers session={null}>{children}</Providers>
-          </TransitionLayout>
+          <Providers session={null}>{children}</Providers>
         </BlurProvider>
       </body>
     </html>

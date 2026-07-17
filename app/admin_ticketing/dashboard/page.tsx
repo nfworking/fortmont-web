@@ -1,6 +1,7 @@
 import { TicketDashboard } from '@/components/ticketing/admin/ticket-dashboard';
 import { prisma } from '@/lib/prisma';
 import { headers } from "next/headers";
+import { PageTransition } from '@/components/ui/page-transition';
 
 
 export default async function DashboardPage() {
@@ -43,5 +44,9 @@ const res = await fetch(
     updatedAt: user.updatedAt.toISOString(),
   }));
 
-  return <TicketDashboard tickets={tickets} users={serializedUsers} />;
+  return (
+    <PageTransition>
+      <TicketDashboard tickets={tickets} users={serializedUsers} />
+    </PageTransition>
+  );
 }
