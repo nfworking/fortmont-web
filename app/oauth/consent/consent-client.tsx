@@ -3,7 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 type ClientInfo = {
   name: string;
@@ -14,6 +21,7 @@ export default function OAuthConsentPage() {
   const searchParams = useSearchParams();
   const [clientInfo, setClientInfo] = useState<ClientInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const clientId = searchParams.get('client_id');
   const redirectUri = searchParams.get('redirect_uri');
@@ -22,7 +30,6 @@ export default function OAuthConsentPage() {
   const codeChallenge = searchParams.get('code_challenge');
   const codeChallengeMethod = searchParams.get('code_challenge_method');
 
-  // Load client information
   useEffect(() => {
     if (!clientId) {
       setError('Missing client_id');
@@ -37,92 +44,120 @@ export default function OAuthConsentPage() {
       .catch(() => setError('Unable to load application details'));
   }, [clientId]);
 
-  const buildAuthorizeUrl = (consent: 'approved') => {
-    const url = new URL('/api/oauth/authorize', window.location.origin);
-    if (clientId) url.searchParams.set('client_id', clientId);
-    if (redirectUri) url.searchParams.set('redirect_uri', redirectUri);
-    url.searchParams.set('response_type', 'code');
-    if (scope) url.searchParams.set('scope', scope);
-    if (state) url.searchParams.set('state', state);
-    if (codeChallenge) url.searchParams.set('code_challenge', codeChallenge);
-    if (codeChallengeMethod) url.searchParams.set('code_challenge_method', codeChallengeMethod);
-    url.searchParams.set('consent', consent);
-    return url.toString();
-  };
-
-  const handleDeny = () => {
-    if (!redirectUri) {
-      setError('Missing redirect URI');
+  const postConsent = async (action: 'approve' | 'deny') => {
+    if (!clientId || !redirectUri) {
+      setError('Missing client_id or redirect_uri');
       return;
     }
-    const params = new URLSearchParams({
-      error: 'access_denied',
-      error_description: 'The user denied the request',
-      ...(state ? { state } : {}),
-    });
-    window.location.href = `${redirectUri}?${params.toString()}`;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/oauth/consent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          client_id: clientId,
+          redirect_uri: redirectUri,
+          scope,
+          state: state || undefined,
+          code_challenge: codeChallenge || undefined,
+          code_challenge_method: codeChallengeMethod || undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.status === 401) {
+        // Session expired mid-flow — send back through OAuth login
+        const authorize = new URL('/api/oauth/authorize', window.location.origin);
+        searchParams.forEach((value, key) => {
+          if (key !== 'consent') authorize.searchParams.set(key, value);
+        });
+        const login = new URL('/oauth/login', window.location.origin);
+        login.searchParams.set('callbackUrl', authorize.toString());
+        if (clientId) login.searchParams.set('client_id', clientId);
+        window.location.href = login.toString();
+        return;
+      }
+
+      if (!res.ok || !data.redirect_to) {
+        setError(data.error_description || data.error || 'Authorization failed');
+        setSubmitting(false);
+        return;
+      }
+
+      window.location.href = data.redirect_to;
+    } catch {
+      setError('Authorization failed. Please try again.');
+      setSubmitting(false);
+    }
   };
 
-  // Render error UI immediately if there is an error
-  const errorUI = error ? (
-    <div className="flex min-h-screen items-center justify-center p-6">
-      <Card className="w-full max-w-lg">
-        <CardHeader>
-          <CardTitle>Authorization Error</CardTitle>
-          <CardDescription>{error}</CardDescription>
-        </CardHeader>
-      </Card>
-    </div>
-  ) : null;
+  const requestedScopes = scope.split(/\s+/).filter(Boolean);
 
-  // Render loading UI while client info is being fetched
-  const loadingUI = (!clientInfo && !error) ? (
-    <div className="flex min-h-screen items-center justify-center p-6">
-      <p>Loading authorization request...</p>
-    </div>
-  ) : null;
+  if (error && !clientInfo) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <Card className="w-full max-w-lg">
+          <CardHeader>
+            <CardTitle>Authorization Error</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
-  const requestedScopes = scope.split(/\\s+/).filter(Boolean);
+  if (!clientInfo) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <p>Loading authorization request...</p>
+      </div>
+    );
+  }
 
   return (
-    <>
-      {errorUI}
-      {loadingUI}
-      {(!error && clientInfo) && (
-        <div className="flex min-h-screen items-center justify-center p-6">
-          <Card className="w-full max-w-lg">
-            <CardHeader>
-              <CardTitle>Authorize {clientInfo.name}</CardTitle>
-              <CardDescription>
-                This application is requesting access to your Fortmont account.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm font-medium">Requested permissions</p>
-                <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground">
-                  {(requestedScopes.length > 0 ? requestedScopes : clientInfo.scopes).map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              {redirectUri && (
-                <p className="text-xs text-muted-foreground break-all">
-                  Redirect URI: {redirectUri}
-                </p>
-              )}
-            </CardContent>
-            <CardFooter className="flex gap-3">
-              <Button variant="outline" onClick={handleDeny}>
-                Deny
-              </Button>
-              <Button onClick={() => (window.location.href = buildAuthorizeUrl('approved'))}>
-                Allow
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      )}
-    </>
+    <div className="flex min-h-screen items-center justify-center p-6 bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900">
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <CardTitle>Authorize {clientInfo.name}</CardTitle>
+          <CardDescription>
+            This application is requesting access to your Fortmont account. After you allow access
+            you will be sent back to the app — not the Fortmont dashboard.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <p className="text-sm font-medium">Requested permissions</p>
+            <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground">
+              {(requestedScopes.length > 0 ? requestedScopes : clientInfo.scopes).map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          {redirectUri && (
+            <p className="text-xs text-muted-foreground break-all">
+              Redirect URI: {redirectUri}
+            </p>
+          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </CardContent>
+        <CardFooter className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => postConsent('deny')}
+            disabled={submitting}
+          >
+            Deny
+          </Button>
+          <Button onClick={() => postConsent('approve')} disabled={submitting}>
+            {submitting ? 'Continuing...' : 'Allow'}
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }

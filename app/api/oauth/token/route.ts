@@ -1,18 +1,15 @@
-import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import { addMinutes } from 'date-fns';
 import {
   generateRandomString,
+  scopesFromJson,
   scopesInclude,
   signAccessToken,
   signIdToken,
   verifyClientSecret,
+  verifyPkceS256,
 } from '@/lib/oauth';
 import { prisma } from '@/lib/prisma';
-
-function scopesFromJson(value: unknown): string[] {
-  return Array.isArray(value) ? (value as string[]) : [];
-}
 
 async function buildIdTokenClaims(userId: string, scopes: string[]) {
   const user = await prisma.appUsers.findUnique({
@@ -31,6 +28,95 @@ async function buildIdTokenClaims(userId: string, scopes: string[]) {
   return claims;
 }
 
+/**
+ * Authenticate the client: either a valid client_secret, or PKCE for public clients.
+ * At least one must succeed for authorization_code grants.
+ */
+async function authenticateClient(
+  client: { id: string; clientSecret: string },
+  clientSecret: string | null,
+  authCode: { codeChallenge: string | null } | null,
+  codeVerifier: string | null,
+): Promise<{ ok: true } | { ok: false; status: number; body: Record<string, string> }> {
+  let secretOk = false;
+  if (clientSecret) {
+    secretOk = await verifyClientSecret(client.clientSecret, clientSecret);
+    if (!secretOk) {
+      return {
+        ok: false,
+        status: 401,
+        body: { error: 'invalid_client', error_description: 'Invalid client_secret' },
+      };
+    }
+  }
+
+  if (authCode?.codeChallenge) {
+    if (!codeVerifier) {
+      return {
+        ok: false,
+        status: 400,
+        body: {
+          error: 'invalid_request',
+          error_description: 'code_verifier is required for PKCE',
+        },
+      };
+    }
+    if (!verifyPkceS256(codeVerifier, authCode.codeChallenge)) {
+      return {
+        ok: false,
+        status: 400,
+        body: {
+          error: 'invalid_grant',
+          error_description: 'PKCE verification failed',
+        },
+      };
+    }
+    return { ok: true };
+  }
+
+  // No PKCE on the code — require client_secret (confidential client)
+  if (!secretOk) {
+    return {
+      ok: false,
+      status: 401,
+      body: {
+        error: 'invalid_client',
+        error_description:
+          'client_secret is required unless the authorization request used PKCE (code_challenge)',
+      },
+    };
+  }
+
+  return { ok: true };
+}
+
+function corsHeaders(request: Request): HeadersInit {
+  const allowed = (
+    process.env.OAUTH_CORS_ORIGINS ||
+    process.env.CORS_ALLOW_ORIGIN ||
+    'http://localhost:8080'
+  )
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  const origin = request.headers.get('origin');
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    Vary: 'Origin',
+  };
+  if (origin && allowed.includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+  } else if (allowed.length === 1) {
+    headers['Access-Control-Allow-Origin'] = allowed[0];
+  }
+  return headers;
+}
+
+export async function OPTIONS(request: Request) {
+  return new NextResponse(null, { status: 204, headers: corsHeaders(request) });
+}
+
 export async function POST(request: Request) {
   const form = await request.formData();
   const grantType = form.get('grant_type');
@@ -41,45 +127,51 @@ export async function POST(request: Request) {
   const refreshToken = form.get('refresh_token') as string | null;
   const codeVerifier = form.get('code_verifier') as string | null;
 
+  const cors = corsHeaders(request);
+
   if (!clientId) {
-    return NextResponse.json({ error: 'invalid_client' }, { status: 400 });
+    return NextResponse.json({ error: 'invalid_client' }, { status: 400, headers: cors });
   }
 
   const client = await prisma.oAuthClient.findUnique({ where: { clientId } });
-  if (!client) return NextResponse.json({ error: 'invalid_client' }, { status: 400 });
-
-  if (clientSecret) {
-    const ok = await verifyClientSecret(client.clientSecret, clientSecret);
-    if (!ok) return NextResponse.json({ error: 'invalid_client' }, { status: 401 });
+  if (!client) {
+    return NextResponse.json({ error: 'invalid_client' }, { status: 401, headers: cors });
   }
 
   if (grantType === 'authorization_code') {
     if (!code || !redirectUri) {
-      return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'invalid_request',
+          error_description: 'code and redirect_uri are required',
+        },
+        { status: 400, headers: cors },
+      );
     }
 
     const authCode = await prisma.oAuthCode.findUnique({ where: { code } });
     if (!authCode || authCode.used || authCode.expiresAt < new Date()) {
-      return NextResponse.json({ error: 'invalid_grant' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'invalid_grant', error_description: 'Code is invalid, used, or expired' },
+        { status: 400, headers: cors },
+      );
     }
     if (authCode.clientId !== client.id || authCode.redirectUri !== redirectUri) {
-      return NextResponse.json({ error: 'invalid_grant' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'invalid_grant',
+          error_description: 'Code was not issued for this client or redirect_uri',
+        },
+        { status: 400, headers: cors },
+      );
     }
 
-    if (authCode.codeChallenge) {
-      if (!codeVerifier) {
-        return NextResponse.json(
-          { error: 'invalid_request', error_description: 'code_verifier required' },
-          { status: 400 },
-        );
-      }
-      const verifierHash = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
-      if (verifierHash !== authCode.codeChallenge) {
-        return NextResponse.json(
-          { error: 'invalid_grant', error_description: 'PKCE verification failed' },
-          { status: 400 },
-        );
-      }
+    const authResult = await authenticateClient(client, clientSecret, authCode, codeVerifier);
+    if (!authResult.ok) {
+      return NextResponse.json(authResult.body, {
+        status: authResult.status,
+        headers: cors,
+      });
     }
 
     await prisma.oAuthCode.update({ where: { code }, data: { used: true } });
@@ -119,15 +211,39 @@ export async function POST(request: Request) {
     }
 
     if (refreshTokenValue) resp.refresh_token = refreshTokenValue;
-    return NextResponse.json(resp);
+    return NextResponse.json(resp, { headers: cors });
   }
 
   if (grantType === 'refresh_token') {
-    if (!refreshToken) return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
+    if (!refreshToken) {
+      return NextResponse.json({ error: 'invalid_request' }, { status: 400, headers: cors });
+    }
+
+    // Refresh requires client_secret (confidential) — public clients with only PKCE
+    // cannot refresh without a secret unless we store client type; require secret for now.
+    if (!clientSecret) {
+      return NextResponse.json(
+        {
+          error: 'invalid_client',
+          error_description: 'client_secret is required for refresh_token grants',
+        },
+        { status: 401, headers: cors },
+      );
+    }
+    const secretOk = await verifyClientSecret(client.clientSecret, clientSecret);
+    if (!secretOk) {
+      return NextResponse.json({ error: 'invalid_client' }, { status: 401, headers: cors });
+    }
 
     const stored = await prisma.oAuthToken.findUnique({ where: { token: refreshToken } });
-    if (!stored || stored.revoked || stored.expiresAt < new Date() || stored.clientId !== client.id) {
-      return NextResponse.json({ error: 'invalid_grant' }, { status: 400 });
+    if (
+      !stored ||
+      stored.revoked ||
+      stored.expiresAt < new Date() ||
+      stored.clientId !== client.id ||
+      stored.type !== 'REFRESH'
+    ) {
+      return NextResponse.json({ error: 'invalid_grant' }, { status: 400, headers: cors });
     }
 
     const scopes = scopesFromJson(stored.scopes);
@@ -149,8 +265,11 @@ export async function POST(request: Request) {
       resp.id_token = await signIdToken(idTokenClaims, client.clientId, '1h');
     }
 
-    return NextResponse.json(resp);
+    return NextResponse.json(resp, { headers: cors });
   }
 
-  return NextResponse.json({ error: 'unsupported_grant_type' }, { status: 400 });
+  return NextResponse.json(
+    { error: 'unsupported_grant_type' },
+    { status: 400, headers: cors },
+  );
 }

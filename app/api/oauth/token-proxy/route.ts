@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getOAuthBaseUrl } from '@/lib/oauth';
 
 /**
  * Proxy that adds the confidential client secret.
@@ -7,7 +8,7 @@ import { NextResponse } from 'next/server';
  * (no NEXT_PUBLIC_ prefix – never sent to the browser)
  */
 export async function POST(request: Request) {
-  const { code, redirect_uri } = await request.json();
+  const { code, redirect_uri, code_verifier } = await request.json();
 
   const clientId = process.env.NEXT_PUBLIC_FORTMONT_CLIENT_ID;
   const clientSecret = process.env.FORTMONT_CLIENT_SECRET;
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const tokenUrl = `${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/oauth/token`;
+  const tokenUrl = `${getOAuthBaseUrl()}/api/oauth/token`;
 
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
     redirect_uri,
     code,
   });
+  if (code_verifier) body.set('code_verifier', code_verifier);
 
   const tokenRes = await fetch(tokenUrl, {
     method: 'POST',

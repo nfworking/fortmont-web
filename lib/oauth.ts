@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { createPrivateKey, createPublicKey, randomBytes } from 'crypto';
+import { createHash, createPrivateKey, createPublicKey, randomBytes } from 'crypto';
 import {
   SignJWT,
   exportJWK,
@@ -16,8 +16,12 @@ let rsaPublicJwk: Record<string, unknown> | null = null;
 let rsaPrivateKey: CryptoKey | null = null;
 let rsaPublicKey: CryptoKey | null = null;
 
-function getIssuer(): string {
-  return process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+export function getOAuthBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+}
+
+export function getIssuer(): string {
+  return getOAuthBaseUrl();
 }
 
 async function loadKeyPairFromEnv(pem: string) {
@@ -30,6 +34,8 @@ async function loadKeyPairFromEnv(pem: string) {
   rsaPublicKey = await importSPKI(publicKeyPem, 'RS256');
   rsaPublicJwk = (await exportJWK(rsaPublicKey)) as Record<string, unknown>;
   rsaPublicJwk.kid = KID;
+  rsaPublicJwk.alg = 'RS256';
+  rsaPublicJwk.use = 'sig';
 }
 
 async function getKeyPair() {
@@ -53,6 +59,8 @@ async function getKeyPair() {
   rsaPublicKey = publicKey;
   rsaPublicJwk = (await exportJWK(publicKey)) as Record<string, unknown>;
   rsaPublicJwk.kid = KID;
+  rsaPublicJwk.alg = 'RS256';
+  rsaPublicJwk.use = 'sig';
   return { rsaPublicJwk, rsaPrivateKey, rsaPublicKey };
 }
 
@@ -123,4 +131,52 @@ export function intersectScopes(requested: string[], allowed: string[]): string[
 
 export function scopesInclude(scopes: string[] | null | undefined, scope: string): boolean {
   return (scopes ?? []).includes(scope);
+}
+
+export function scopesFromJson(value: unknown): string[] {
+  return Array.isArray(value) ? (value as string[]) : [];
+}
+
+/** Append query params to a redirect URI that may already contain a query string. */
+export function appendQueryToUri(uri: string, params: URLSearchParams): string {
+  const qs = params.toString();
+  if (!qs) return uri;
+  return uri.includes('?') ? `${uri}&${qs}` : `${uri}?${qs}`;
+}
+
+export function createOAuthErrorRedirect(
+  redirectUri: string,
+  error: string,
+  errorDescription?: string,
+  state?: string | null,
+) {
+  const params = new URLSearchParams({ error });
+  if (errorDescription) params.set('error_description', errorDescription);
+  if (state) params.set('state', state);
+  return appendQueryToUri(redirectUri, params);
+}
+
+/** S256 code_challenge = BASE64URL(SHA256(code_verifier)) */
+export function verifyPkceS256(codeVerifier: string, codeChallenge: string): boolean {
+  const hash = createHash('sha256').update(codeVerifier).digest('base64url');
+  return hash === codeChallenge;
+}
+
+export function getOpenIdConfiguration() {
+  const base = getOAuthBaseUrl();
+  return {
+    issuer: base,
+    authorization_endpoint: `${base}/api/oauth/authorize`,
+    token_endpoint: `${base}/api/oauth/token`,
+    userinfo_endpoint: `${base}/api/oauth/userinfo`,
+    jwks_uri: `${base}/api/jwks`,
+    response_types_supported: ['code'],
+    subject_types_supported: ['public'],
+    id_token_signing_alg_values_supported: ['RS256'],
+    scopes_supported: ['openid', 'profile', 'email', 'offline_access'],
+    token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
+    code_challenge_methods_supported: ['S256'],
+    grant_types_supported: ['authorization_code', 'refresh_token'],
+    claims_supported: ['sub', 'name', 'email', 'picture'],
+  };
 }
