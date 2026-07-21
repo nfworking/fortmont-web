@@ -1,14 +1,14 @@
 {
   "name": "@fortmont/auth-client",
-  "version": "0.1.0",
-  "description": "Lightweight client SDK for Fortmont OAuth2 / OpenID Connect integration",
+  "version": "1.4.0",
+  "description": "Client helpers for signing Next.js apps into Fortmont as an OpenID Connect identity provider",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "prepublishOnly": "npm run build"
+    "build": "tsc ",
+    "prepublishOnly": "pnpm run build"
   },
-  "author": "Fortmont",
+  "author": "nfworking",
   "license": "MIT",
   "dependencies": {
     "cross-fetch": "^3.1.8"

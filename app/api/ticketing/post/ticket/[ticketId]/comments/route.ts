@@ -1,8 +1,7 @@
-// app/api/tickets/[ticketId]/comments/route.ts (or your matching route path)
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { createClient } from "redis"; // Import the Redis client
+import { resolveTicketingActor } from "@/lib/ticketing-auth";
 
 // Setup a reusable redis publisher client
 const redisUrl = process.env.REDIS_URL || "redis://172.20.0.25:6379";
@@ -16,9 +15,9 @@ export async function POST(
   { params }: { params: Promise<{ ticketId: string }> }
 ) {
   try {
-    const session = await auth();
+    const actor = await resolveTicketingActor(request);
 
-    if (!session?.user?.id) {
+    if (!actor?.userId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -40,7 +39,7 @@ export async function POST(
       data: {
         text,
         ticketId,
-        authorId: session.user.id,
+        authorId: actor.userId,
       },
       include: {
         author: {

@@ -1,58 +1,17 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse, NextRequest } from "next/server"; // Added NextRequest
-import { auth } from "@/lib/auth";
-import { decode } from "next-auth/jwt"; // Added decode to read mobile tokens
+import { NextRequest, NextResponse } from "next/server";
+import { resolveTicketingActor } from "@/lib/ticketing-auth";
 
 export const dynamic = "force-dynamic";
 
-const AUTH_JWT_SALT = "authjs.session-token";
-
 export async function GET(req: NextRequest) {
-  let userId: string | undefined;
-  let userRole: string | undefined;
+  const actor = await resolveTicketingActor(req);
 
-  // 1. TRY MOBILE AUTHENTICATION FIRST (Bearer Token)
-  const authHeader = req.headers.get("Authorization");
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const token = authHeader.substring(7);
-    const authSecret = process.env.AUTH_SECRET;
-
-    if (authSecret) {
-      try {
-        const decoded: any = await decode({
-          token,
-          secret: authSecret,
-          salt: AUTH_JWT_SALT,
-        });
-
-        if (decoded && decoded.sub) {
-          userId = decoded.sub;
-          userRole = decoded.role;
-        }
-      } catch (error) {
-        console.error("Failed to decode mobile token:", error);
-        return NextResponse.json({ error: "Invalid mobile token" }, { status: 401 });
-      }
-    }
-  }
-
-  // 2. FALLBACK TO WEB AUTHENTICATION (Cookies via auth())
-  if (!userId) {
-    const session = await auth();
-    if (session?.user?.id) {
-      userId = session.user.id;
-      userRole = (session.user as any).role;
-    }
-  }
-
-  // 3. REJECT IF NEITHER WORKED
-  if (!userId) {
+  if (!actor?.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // FIXED: Evaluates isAdmin cleanly based on your role check logic
-  // (Note: Make sure to fill in your admin criteria, e.g., userRole === "admin")
-  const isAdmin = userRole === "admin" || userRole === "ticket_admin"; 
+  const isAdmin = actor.userRole === "admin" || actor.userRole === "ticket_admin";
 
   // 4. FETCH TICKETS
   const tickets = await prisma.tickets.findMany({
@@ -66,7 +25,7 @@ export async function GET(req: NextRequest) {
             ],
           }
         : {
-            assignedToId: userId,
+            assignedToId: actor.userId,
             OR: [{ status: null }, { status: { not: "closed" } }],
           }),
     },
