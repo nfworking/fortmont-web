@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     middlewareClientMaxBodySize: "20gb",
   },
 
-allowedDevOrigins: ["https://api.fortmont.me"],
+allowedDevOrigins: ["api.fortmont.me"],
 
   async headers() {
     return [
@@ -14,7 +14,7 @@ allowedDevOrigins: ["https://api.fortmont.me"],
         headers: [
           {
             key: "Access-Control-Allow-Origin",
-            value: "https://api.fortmont.me",
+            value: "http://localhost:8080",
           },
           {
             key: "Access-Control-Allow-Methods",

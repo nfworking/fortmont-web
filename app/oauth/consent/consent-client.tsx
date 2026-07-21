@@ -22,12 +22,12 @@ export default function OAuthConsentPage() {
   const codeChallenge = searchParams.get('code_challenge');
   const codeChallengeMethod = searchParams.get('code_challenge_method');
 
+  // Load client information
   useEffect(() => {
     if (!clientId) {
       setError('Missing client_id');
       return;
     }
-
     fetch(`/api/oauth/client-info?client_id=${encodeURIComponent(clientId)}`)
       .then(async (res) => {
         if (!res.ok) throw new Error('Unknown client');
@@ -55,7 +55,6 @@ export default function OAuthConsentPage() {
       setError('Missing redirect URI');
       return;
     }
-
     const params = new URLSearchParams({
       error: 'access_denied',
       error_description: 'The user denied the request',
@@ -64,75 +63,66 @@ export default function OAuthConsentPage() {
     window.location.href = `${redirectUri}?${params.toString()}`;
   };
 
-  if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center p-6">
-        <Card className="w-full max-w-lg">
-          <CardHeader>
-            <CardTitle>Authorization Error</CardTitle>
-            <CardDescription>{error}</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!clientInfo) {
-    return (
-      <div className="flex min-h-screen items-center justify-center p-6">
-        <p>Loading authorization request...</p>
-      </div>
-    );
-  }
-
-  // Auto-approve if the user has already granted the requested scopes
-  const alreadyApproved = (() => {
-    const granted = clientInfo.scopes;
-    const requested = scope.split(/\\s+/).filter(Boolean);
-    if (requested.length === 0) return true; // no new scopes
-    return requested.every((s) => granted.includes(s));
-  })();
-
-  useEffect(() => {
-    if (alreadyApproved && redirectUri) {
-      // Immediately redirect with consent=approved
-      window.location.href = buildAuthorizeUrl('approved');
-    }
-  }, [alreadyApproved, redirectUri]);
-
-  const requestedScopes = scope.split(/\s+/).filter(Boolean);
-
-  return (
+  // Render error UI immediately if there is an error
+  const errorUI = error ? (
     <div className="flex min-h-screen items-center justify-center p-6">
       <Card className="w-full max-w-lg">
         <CardHeader>
-          <CardTitle>Authorize {clientInfo.name}</CardTitle>
-          <CardDescription>
-            This application is requesting access to your Fortmont account.
-          </CardDescription>
+          <CardTitle>Authorization Error</CardTitle>
+          <CardDescription>{error}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <p className="text-sm font-medium">Requested permissions</p>
-            <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground">
-              {(requestedScopes.length > 0 ? requestedScopes : clientInfo.scopes).map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          {redirectUri && (
-            <p className="text-xs text-muted-foreground break-all">Redirect URI: {redirectUri}</p>
-          )}
-        </CardContent>
-        <CardFooter className="flex gap-3">
-          <Button variant="outline" onClick={handleDeny}>
-            Deny
-          </Button>
-          <Button onClick={() => { window.location.href = buildAuthorizeUrl('approved'); }}>
-            Allow
-          </Button>
-        </CardFooter>
       </Card>
     </div>
+  ) : null;
+
+  // Render loading UI while client info is being fetched
+  const loadingUI = (!clientInfo && !error) ? (
+    <div className="flex min-h-screen items-center justify-center p-6">
+      <p>Loading authorization request...</p>
+    </div>
+  ) : null;
+
+  const requestedScopes = scope.split(/\\s+/).filter(Boolean);
+
+  return (
+    <>
+      {errorUI}
+      {loadingUI}
+      {(!error && clientInfo) && (
+        <div className="flex min-h-screen items-center justify-center p-6">
+          <Card className="w-full max-w-lg">
+            <CardHeader>
+              <CardTitle>Authorize {clientInfo.name}</CardTitle>
+              <CardDescription>
+                This application is requesting access to your Fortmont account.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-medium">Requested permissions</p>
+                <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground">
+                  {(requestedScopes.length > 0 ? requestedScopes : clientInfo.scopes).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              {redirectUri && (
+                <p className="text-xs text-muted-foreground break-all">
+                  Redirect URI: {redirectUri}
+                </p>
+              )}
+            </CardContent>
+            <CardFooter className="flex gap-3">
+              <Button variant="outline" onClick={handleDeny}>
+                Deny
+              </Button>
+              <Button onClick={() => (window.location.href = buildAuthorizeUrl('approved'))}>
+                Allow
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      )}
+    </>
   );
 }
