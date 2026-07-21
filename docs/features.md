@@ -1,37 +1,50 @@
-# Features that are implemented
- ### Login System ( Pre Release Quality )
-  - A modern login page designed for the login system, it also includes a seperate login page for the mail client. It handles both entra and credentials login. It has EntraID with profile sync to the database, it also has credentials login with standard username and password login with a password reset flow included
+# Features
 
- ### Dashboard (In Progress)
-   -  Dashboard Pages feature a application shell, with the main page on the dashboard being a proxmox cluster summary, with vm, storage, node and lxc information.
-   - Server Settings page does not currently have any content in it 
-   - Site Users contains information about the current site users, including their id, type, role, and other personal information
-   - Server registry info and lxc registry info is depreciated and will be removed in future releases
-   - Dns records page retrives information from the dns server, displays records, types and address it resolves to
-   - Proxy page lists all the proxy hosts and routes on the configured proxy server, including, entrypoints, id, rules and targets. 
-   - SSL Certs page includes information about the ssl certificates made my the proxy server and cloudflare, it includes domain, resolver, expiry.
-   - Azure Page contains information about the EntraID and Azure subscription for the application. It includes information about EntraID users, groups, devices, apps, and logs. It also includes a Azure section, which includes information about subscriptions, resources, vms, storage and role assignments. 
+## Implemented
 
+### Authentication and account access
 
+- Entra ID and credential-based login are both supported.
+- Password reset is wired through the app and linked to the public app URL.
+- Two-factor authentication is available through the account and auth routes.
+- Device registration and session tracking are implemented for connected devices.
 
- ### Mail Client (In Progress)
- - A mail client which connects user information from the db and automatically sign-ins in the user. Features inbox and sent page at the moment, with a search function aswell.
+### Identity and integrations
 
- ### Apps Page (Quick access Page)
- - A quick access page featuring all the pages in the application and their links, as well as links to homelab services, with a moving background
- 
- 
+- The app exposes a built-in OAuth 2.0 / OpenID Connect server.
+- GitHub account linking is supported.
+- Azure and Entra helper routes exist for identity and directory-related views.
 
+### Dashboard and operations
 
+- The dashboard includes homelab-facing views for Proxmox, DNS, proxy, Unifi, and Azure-related data.
+- Platform API key management is available for internal service access.
+- The apps area surfaces quick links and registered services.
 
+### Mail and notifications
 
- # Future Features 
+- Mailbox provisioning and mailbox UI routes are present.
+- In-app notifications and push/device notifications are wired into ticketing and auth flows.
 
- ### Ticket Management System 
- - A ServiceNow ticket style system that is more fintuned towards homelab tasks, will feature activity logs, comments, live chat*, chatbot*, seprate pages and dashboard under /ticketing. It will use the exisitng authentication system for auth, and the exisitng DB. It will also feature RBAC** for users and IT Admins. It will also feature a KBA style homepage, with the ability to search and use docs, for different tasks, create INC, UR, and REQ tickets, with some REQ being automated by the system***
+### Storage and files
 
+- The storage flow uses presigned uploads, completion tracking, and delete/download routes.
+- File sharing and file activity records are part of the current schema.
 
+### Ticketing
 
- - (* ) these features will be subjected to avaiability and difficulty, not all features of live chat and ai chatbot will be possible, so it may not be implemented
- - (**) This will be implemented for both entraid users and local users, AD intergration will also possibly be implements
- - (***) This feature may or may not be implements, pending difficutly and usefulness review.
+- Tickets, comments, teams, and a knowledge base article model are in place.
+- Ticket creation can notify assignees through email and device notifications.
+- Ticketing data is exposed through dedicated create, update, assign, and stream routes.
+
+## In progress or evolving
+
+- The ticketing experience still has room to grow around audit trails, automation, and richer workflow states.
+- Knowledge base content is present in the schema, but the authoring and search experience can still expand.
+- More advanced RBAC and team workflows can be layered on top of the current account and ticketing models.
+- Some integrations may still be incomplete depending on the backing homelab services that are available.
+
+## What changed from the old notes
+
+- Server registry and older LXC registry notes are no longer the main focus.
+- The current schema is broader than the original app: it now includes storage, OAuth, 2FA, sessions, API keys, notifications, and ticketing relationships.

@@ -1,26 +1,46 @@
-## Fortmont Tickting and Workflows
+# Ticketing
 
-### Recently a new intergrated ticketing platform was created inside Fortmont Web. This is going to be developed as a similar clone to ServiceNow, complete with request forms, kba and admin dashboard. 
+Fortmont includes a built-in ticketing module that uses the main auth and user schema. Tickets, comments, teams, and KB articles are all stored in Prisma and are exposed through dedicated routes under `app/api/ticketing`.
 
-#### Current features that have been implemented include: 
+## Current capabilities
 
-- Basic ticket creation and editing
-- Basic admin dashboard with tickets overview
-- Incomplete KBA docs page, not completed yet as ticket dashboard was being developed
-- Dynamic patch API routes, dynamic filters with avaiable types, departments, etc
-- kba GET and POST route implemented
-- ticket GET, POST, PATCH routes implemented
+- Create and list tickets from the main app.
+- Update existing tickets and assign them to users or teams.
+- Add comments to tickets.
+- Load ticketing form metadata and user selectors.
+- Stream ticket updates over Redis-backed event routes.
+- Notify assignees through email, in-app notifications, and device notifications.
 
-### Features to still implement 
+## Data model
 
-- Comments and audit trail features for ticketing and kba events
-- Automation based tickets, with base automation engine, N8N
-- Email sending on ticket status changes, new comments, and assigned using N8N
-- Team creation such as NOC, SOC and other teams like channels, maybe a actual teams like interface as a seperate application**
-- RBAC for admin and ticket pages, so that only admins see ticket dashboard, where as users, can only create tickets, and view tickets under their name*
+The ticketing module uses these core models:
 
+- `Tickets` for the ticket record itself.
+- `Comment` for ticket discussion threads.
+- `Team` for group assignment and membership.
+- `KbArticle` for knowledge base content.
+- `AppUsers` for creators, assignees, authors, and team members.
 
-## Tehcnologies that need to be implemented
-- Automation engine*** (Currently going to use N8N)
-- .env seperation for ticketing sub-app vs main app
-- API key usage if going to implement teams like sub-app**
+The current ticket priority enum is `LOW`, `MEDIUM`, `HIGH`, and `URGENT`.
+
+## API surface
+
+- `/api/ticketing/post/ticket`: List or create tickets.
+- `/api/ticketing/get/ticket`: Read a ticket record.
+- `/api/ticketing/patch/ticket/:id`: Edit a ticket.
+- `/api/ticketing/patch/assign/team`: Assign a ticket to a team.
+- `/api/ticketing/post/ticket/:ticketId/comments`: Add a comment.
+- `/api/ticketing/post/ticket/form`: Fetch or submit ticket form data.
+- `/api/ticketing/get/users`: List users for assignment selectors.
+- `/api/ticketing/stream/tickets/:ticketId/stream`: Stream live ticket activity.
+
+## What is still evolving
+
+- More complete audit trails and history views.
+- Better automation around routing, classification, and status transitions.
+- Stronger admin and role-based access controls.
+- A richer knowledge base authoring and search experience.
+
+## Practical note
+
+Ticketing is already integrated with the rest of the platform, so changes to auth, notifications, storage, or user records can affect it directly. When you change one of those shared systems, check the ticketing routes and UI together.
