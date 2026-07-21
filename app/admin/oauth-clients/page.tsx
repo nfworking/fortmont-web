@@ -1,11 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+'use client';
+
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-
-const prisma = new PrismaClient();
 
 type OAuthClient = {
   id: string;
@@ -28,7 +26,7 @@ export default function OAuthClientsAdmin() {
     setLoading(true);
     const res = await fetch('/api/admin/oauth-client');
     const data = await res.json();
-    setClients(data);
+    setClients(Array.isArray(data) ? data : []);
     setLoading(false);
   };
 
@@ -49,7 +47,9 @@ export default function OAuthClientsAdmin() {
     });
     if (res.ok) {
       const created = await res.json();
-      alert(`Client created!\nClient ID: ${created.clientId}\nClient Secret: ${created.clientSecret}\nSave the secret now; it will not be shown again.`);
+      alert(
+        `Client created!\nClient ID: ${created.clientId}\nClient Secret: ${created.clientSecret}\nSave the secret now; it will not be shown again.`,
+      );
       setShowCreate(false);
       setNewName('');
       setNewRedirect('');
@@ -110,16 +110,21 @@ export default function OAuthClientsAdmin() {
         </table>
       )}
 
-      {/* Create Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create OAuth Client</DialogTitle>
-            <DialogDescription>Enter a name, one or more redirect URIs (comma‑separated) and scopes.</DialogDescription>
+            <DialogDescription>
+              Enter a name, one or more redirect URIs (comma-separated) and scopes.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <Input placeholder="Client name" value={newName} onChange={(e) => setNewName(e.target.value)} />
-            <Input placeholder="Redirect URIs (comma separated)" value={newRedirect} onChange={(e) => setNewRedirect(e.target.value)} />
+            <Input
+              placeholder="Redirect URIs (comma separated)"
+              value={newRedirect}
+              onChange={(e) => setNewRedirect(e.target.value)}
+            />
             <Input placeholder="Scopes (space separated)" value={newScopes} onChange={(e) => setNewScopes(e.target.value)} />
           </div>
           <DialogFooter>

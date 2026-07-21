@@ -370,6 +370,7 @@ model OAuthCode {
   userId        String
   user          AppUsers @relation(fields: [userId], references: [id])
   redirectUri   String
+  scopes        Json
   codeChallenge String? // PKCE S256 challenge
   expiresAt     DateTime
   used          Boolean  @default(false)
