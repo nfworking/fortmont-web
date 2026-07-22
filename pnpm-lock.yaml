@@ -26,9 +26,6 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.4)
-      '@fortmont/fortmont-ui':
-        specifier: workspace:*
-        version: link:packages/fortmont-ui
       '@prisma/adapter-mariadb':
         specifier: ^7.8.0
         version: 7.8.0
@@ -238,34 +235,6 @@ importers:
     devDependencies:
       typescript:
         specifier: ^5.5.0
-        version: 5.9.3
-
-  packages/fortmont-ui:
-    dependencies:
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
-      lucide-react:
-        specifier: ^1.16.0
-        version: 1.16.0(react@19.2.4)
-      next:
-        specifier: ^16.2.6
-        version: 16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      next-auth:
-        specifier: ^5.0.0-beta.25
-        version: 5.0.0-beta.25(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(nodemailer@8.0.10)(react@19.2.4)
-      react:
-        specifier: ^19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.2.4
-        version: 19.2.4(react@19.2.4)
-      tailwind-merge:
-        specifier: ^3.6.0
-        version: 3.6.0
-    devDependencies:
-      typescript:
-        specifier: ^5
         version: 5.9.3
 
   packages/sample: {}

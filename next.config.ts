@@ -5,8 +5,6 @@ const nextConfig: NextConfig = {
     middlewareClientMaxBodySize: "20gb",
   },
 
-  transpilePackages: ["@fortmont/fortmont-ui"],
-
 allowedDevOrigins: ["api.fortmont.me"],
 
   async headers() {
