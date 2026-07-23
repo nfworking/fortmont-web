@@ -3,6 +3,9 @@
 ## Recent Changes to Development
 Due to the growing project, the project is undergoing some changes, primarly on how its being developed. features will be implemented in dev branch, before it is pushed into production. Github actions will also be used to enforce the quality of the code. I am also investigating a new development process, where this repo will become a mono repo for the entire Fortmont products and future projects
 
+## Update on migration process
+The project a few commits ago was going under a migration process, however several issues were encountered, so the plan was scraped. However after implementing oauth authentication, it can be determined that a new safe path to the migration process can be seen. This will slowly be implemented in a new branch under migration, please head over to that branch for migration updates. The main branch will be paused to recieve updates during this time. 
+
 Fortmont is a Next.js-based internal platform for identity, homelab operations, storage, ticketing, and service administration. The app currently includes:
 
 - Auth.js sign-in with Entra ID and credentials login
