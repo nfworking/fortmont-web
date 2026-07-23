@@ -1,7 +1,7 @@
 ## Fortmont
 
 ## Recent Changes to Development
-Due to the growing project, the project is undergoing some changes, primarly on how its being developed. features will be implemented in dev branch, before it is pushed into production. Github actions will also be used to enforce the quality of the code. I am also investigating a new development process, where this repo will become a mono repo for the entire Fortmont products.
+Due to the growing project, the project is undergoing some changes, primarly on how its being developed. features will be implemented in dev branch, before it is pushed into production. Github actions will also be used to enforce the quality of the code. I am also investigating a new development process, where this repo will become a mono repo for the entire Fortmont products and future projects
 
 Fortmont is a Next.js-based internal platform for identity, homelab operations, storage, ticketing, and service administration. The app currently includes:
 
