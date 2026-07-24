@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Providers } from "@/components/providers";
+import { Providers } from "@/temp_move/components/common/providers";
 import { Toaster } from "@/components/ui/sonner";
 
-import { BlurProvider } from "@/components/blur-provider";
+import { BlurProvider } from "@/components/.legacy/blur-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

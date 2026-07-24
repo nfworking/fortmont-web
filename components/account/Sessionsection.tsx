@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SettingsSection } from "@/components/account/Settingssection";
-import { ActiveSessionsCard } from "@/components/active-sessions-card";
+import { ActiveSessionsCard } from "@/components/account/active-sessions-card";
 import { LogOut } from "lucide-react";
 
 interface SessionsSectionProps {

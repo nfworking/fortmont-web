@@ -1,5 +1,5 @@
 "use client";
-import {MailboxOnboarding} from "@/components/mailbox";
+import {MailboxOnboarding} from "@/temp_move/components/mail/mailbox";
 import { useRouter } from "next/dist/client/components/navigation";
 import { Metadata } from "next";
 

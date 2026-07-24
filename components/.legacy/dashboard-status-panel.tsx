@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DashboardHero, DashboardPage, DashboardSection } from "@/components/dashboard/page-shell";
+import { DashboardHero, DashboardPage, DashboardSection } from "@/temp_move/components/dashboard/page-shell";
 
 // Type definition for the LXC data structure
 type LxcRecord = {
