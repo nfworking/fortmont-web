@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Providers } from "@/temp_move/components/common/providers";
+import { Providers } from "@/components/common/providers";
 import { Toaster } from "@/components/ui/sonner";
 
-import { BlurProvider } from "@/components/.legacy/blur-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,9 +32,9 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Toaster />
-        <BlurProvider>
+       
           <Providers session={null}>{children}</Providers>
-        </BlurProvider>
+       
       </body>
     </html>
   );
