@@ -51,6 +51,19 @@ export async function DELETE(request: Request) {
   }
 
   const { clientId } = await request.json();
-  await prisma.oAuthClient.delete({ where: { clientId } });
+  const client = await prisma.oAuthClient.findUnique({
+    where: { clientId },
+    select: { id: true },
+  });
+
+  if (!client) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  await prisma.$transaction([
+    prisma.oAuthCode.deleteMany({ where: { clientId: client.id } }),
+    prisma.oAuthToken.deleteMany({ where: { clientId: client.id } }),
+    prisma.oAuthClient.delete({ where: { clientId } }),
+  ]);
   return NextResponse.json({ success: true });
 }
