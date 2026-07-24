@@ -21,6 +21,7 @@ export async function GET(req: Request) {
       sessionToken: true,
       userAgent: true,
       ipAddress: true,
+      signInUrl: true,
       cookieVersion: true,
       createdAt: true,
       lastActive: true,

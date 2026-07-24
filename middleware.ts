@@ -101,6 +101,8 @@ export default auth(async (req) => {
   const isAuthPage = authPages.some(
     (route) => pathname === route || pathname.startsWith(route + "/"),
   );
+  const isOAuthAccountSwitch =
+    pathname === "/oauth/login" && req.nextUrl.searchParams.get("switch_account") === "1";
   const isOnboardingRoute = pathname === "/onboard/user" || pathname.startsWith("/onboard/");
   const isOAuthUi = isOAuthConnectRoute(pathname);
 
@@ -173,6 +175,10 @@ export default auth(async (req) => {
   }
 
   if (isAuthPage) {
+    if (isOAuthAccountSwitch) {
+      return NextResponse.next();
+    }
+
     const callbackUrl = req.nextUrl.searchParams.get("callbackUrl");
     if (callbackUrl) {
       return NextResponse.redirect(new URL(callbackUrl, req.url));

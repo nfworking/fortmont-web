@@ -118,11 +118,15 @@ export function LoginForm({ className, callbackUrl, ...props }: LoginFormProps) 
     }
   };
 
-  const handleEntraLogin = async () => {
+  const handleEntraLogin = async (forceAccountSelection = false) => {
     try {
       setIsLoading2(true);
       setError(null);
-      await signIn("microsoft-entra-id", { callbackUrl });
+      await signIn(
+        "microsoft-entra-id",
+        { callbackUrl },
+        forceAccountSelection ? { prompt: "select_account" } : undefined,
+      );
     } finally {
       setIsLoading2(false);
     }
@@ -219,6 +223,15 @@ export function LoginForm({ className, callbackUrl, ...props }: LoginFormProps) 
         <Field>
           <Button variant="outline" type="button" onClick={handleEntraLogin} disabled={isLoading2}>
             {isLoading2 ? "Signing in..." : "Login with Entra ID"}<ArrowUpRight />
+          </Button>
+          <Button
+            variant="ghost"
+            type="button"
+            onClick={() => handleEntraLogin(true)}
+            disabled={isLoading2}
+            className="mt-2 w-full"
+          >
+            Sign in with a different Microsoft account
           </Button>
           <Button variant="outline" type="button" onClick={() => (window.location.href = "/mail")}>
             Access Fortmont Webmail<ArrowUpRight />

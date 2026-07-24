@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
         sessionToken: true,
         userAgent: true,
         ipAddress: true,
+        signInUrl: true,
         createdAt: true,
         lastActive: true,
       },

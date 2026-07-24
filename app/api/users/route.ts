@@ -44,6 +44,7 @@ const userSelectFields = {
   phone: true,
   mailboxes: { select: { id: true, email: true, isPrimary: true } },
   teams: { select: { id: true, name: true, description: true } },
+  deviceTokens: { select: { id: true, platform: true, createdAt: true, deviceVersion: true, deviceName: true, deviceModelName: true, deviceBrand: true } },
   notifications: {
     select: {
       id: true,
@@ -55,19 +56,14 @@ const userSelectFields = {
     },
   },
   githubLink: {
-    select: {
-      username: true,
-      profileUrl: true,
-      avatarUrl: true,
-      scope: true,
-      linkedAt: true,
-    },
+    
   },
   sessions: {
     select: {
       id: true,
       userAgent: true,
       ipAddress: true,
+      signInUrl: true,
       createdAt: true,
       expiresAt: true,
       lastActive: true,
@@ -195,7 +191,7 @@ export async function POST(req: Request) {
     },
   });
 
-  return Response.json(createdUser, { status: 201 });
+  return Response.json(sanitizeAppUser(createdUser), { status: 201 });
 }
 
 export async function DELETE(req: Request) {

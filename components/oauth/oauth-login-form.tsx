@@ -125,11 +125,15 @@ export function OAuthLoginForm({
     }
   };
 
-  const handleEntraLogin = async () => {
+  const handleEntraLogin = async (forceAccountSelection = false) => {
     try {
       setIsLoadingEntra(true);
       setError(null);
-      await signIn("microsoft-entra-id", { callbackUrl });
+      await signIn(
+        "microsoft-entra-id",
+        { callbackUrl },
+        forceAccountSelection ? { prompt: "select_account" } : undefined,
+      );
     } catch {
       setError("Could not start Microsoft sign-in.");
       setIsLoadingEntra(false);
@@ -249,6 +253,15 @@ export function OAuthLoginForm({
           >
             {isLoadingEntra ? "Redirecting..." : "Continue with Entra ID"}
             <ArrowUpRight />
+          </Button>
+          <Button
+            variant="ghost"
+            type="button"
+            onClick={() => handleEntraLogin(true)}
+            disabled={isLoading || isLoadingEntra}
+            className="mt-2 w-full"
+          >
+            Sign in with a different Microsoft account
           </Button>
           <FieldDescription className="text-center">
             Looking for Fortmont itself?{" "}
