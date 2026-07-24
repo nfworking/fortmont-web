@@ -4,6 +4,22 @@ import { authConfig } from "@/lib/auth.config";
 
 const { auth } = NextAuth(authConfig);
 
+function corsHeaders(request: NextRequest): HeadersInit {
+  const origin = request.headers.get("origin");
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Credentials": "true",
+    Vary: "Origin",
+  };
+
+  if (origin) {
+    headers["Access-Control-Allow-Origin"] = origin;
+  }
+
+  return headers;
+}
+
 const publicRoutes = [
   "/apps",
   "/forgot-password",
@@ -56,6 +72,23 @@ function redirectToLogin(req: NextRequest) {
 
 export default auth(async (req) => {
   const { pathname, search } = req.nextUrl;
+  const isApiRoute = pathname.startsWith("/api/");
+
+  if (isApiRoute && req.method === "OPTIONS") {
+    return new NextResponse(null, { status: 204, headers: corsHeaders(req) });
+  }
+
+  if (isApiRoute) {
+    const response = NextResponse.next();
+    const cors = corsHeaders(req);
+
+    for (const [key, value] of Object.entries(cors)) {
+      response.headers.set(key, value);
+    }
+
+    return response;
+  }
+
   const isPublicRoute =
     pathname.startsWith("/api") ||
     publicRoutes.some((route) => pathname === route || pathname.startsWith(route + "/"));
