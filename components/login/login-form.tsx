@@ -221,7 +221,7 @@ export function LoginForm({ className, callbackUrl, ...props }: LoginFormProps) 
         </Field>
         <FieldSeparator>continue with</FieldSeparator>
         <Field>
-          <Button variant="outline" type="button" onClick={handleEntraLogin} disabled={isLoading2}>
+          <Button variant="outline" type="button" onClick={() => handleEntraLogin()} disabled={isLoading2}>
             {isLoading2 ? "Signing in..." : "Login with Entra ID"}<ArrowUpRight />
           </Button>
           <Button
