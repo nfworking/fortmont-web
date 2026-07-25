@@ -248,7 +248,7 @@ export function OAuthLoginForm({
           <Button
             variant="outline"
             type="button"
-            onClick={handleEntraLogin}
+            onClick={() => handleEntraLogin()}
             disabled={isLoading || isLoadingEntra}
           >
             {isLoadingEntra ? "Redirecting..." : "Continue with Entra ID"}
