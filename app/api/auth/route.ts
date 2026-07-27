@@ -130,7 +130,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     if (conflictingUser) {
-      return createError("A user with that email already exists", 409);
+      return createError("A user creation error occured", 409);
     }
   }
 
