@@ -15,3 +15,17 @@ export async function getRedis() {
   }
   return redis;
 }
+
+// Creates a dedicated duplicate client for pub/sub subscriptions.
+// A subscriber client can't run normal commands, so each SSE
+// connection needs its own instance rather than sharing `redis`.
+export async function createSubscriberClient() {
+  const sub = redis.duplicate();
+  sub.on("error", (err) => console.error("Redis Subscriber Error:", err));
+  await sub.connect();
+  return sub;
+}
+
+export function notificationChannel(userId: string) {
+  return `notifications:${userId}`;
+}

@@ -19,15 +19,30 @@ async function getUserRole(userId: string): Promise<string | null> {
   return user?.role ?? null;
 }
 
-async function tryOAuthAccessToken(request: Request): Promise<TicketingActor | null> {
+// Reads the bearer token from the Authorization header, falling back to a
+// `?token=` query param. The query-param path exists solely for EventSource
+// (SSE) connections, which can't set custom request headers. Query-param
+// tokens should be short-lived — see mintStreamToken in oauth.ts.
+function extractBearerToken(request: Request): string | null {
   const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.slice(7);
+  }
+
+  const url = new URL(request.url);
+  const queryToken = url.searchParams.get('token');
+  return queryToken || null;
+}
+
+async function tryOAuthAccessToken(request: Request): Promise<TicketingActor | null> {
+  const token = extractBearerToken(request);
+  if (!token) {
     return null;
   }
 
   try {
     const issuer = getOAuthBaseUrl(request);
-    const { payload } = await verifyAccessToken(authHeader.slice(7), issuer);
+    const { payload } = await verifyAccessToken(token, issuer);
     if (typeof payload.sub !== 'string') {
       return null;
     }
@@ -42,8 +57,8 @@ async function tryOAuthAccessToken(request: Request): Promise<TicketingActor | n
 }
 
 async function tryLegacyBearerToken(request: Request): Promise<TicketingActor | null> {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
+  const token = extractBearerToken(request);
+  if (!token) {
     return null;
   }
 
@@ -54,7 +69,7 @@ async function tryLegacyBearerToken(request: Request): Promise<TicketingActor | 
 
   try {
     const decoded = await decode({
-      token: authHeader.slice(7),
+      token,
       secret: authSecret,
       salt: LEGACY_AUTH_JWT_SALT,
     });
