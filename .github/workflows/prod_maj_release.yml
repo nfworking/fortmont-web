@@ -13,11 +13,16 @@ on:
 jobs:
   build:
     runs-on: self-hosted
-    if: contains(fromJson('["success","neutral"]'), github.event.workflow_run.conclusion)
+
+    if: |
+      github.event.workflow_run.conclusion == 'success' ||
+      github.event.workflow_run.conclusion == 'neutral'
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout tested commit
+        uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
 
       - name: Install pnpm
@@ -36,7 +41,7 @@ jobs:
       - name: Run build
         run: pnpm build:cicd
 
-      - name: Check tag eligibility from package version
+      - name: Check major release eligibility
         id: version_gate
         uses: actions/github-script@v7
         with:
@@ -44,30 +49,48 @@ jobs:
             const fs = require('fs');
             const cp = require('child_process');
 
-            const current = JSON.parse(fs.readFileSync('package.json', 'utf8')).version;
-            const before = '${{ github.event.before }}';
+            const current = JSON.parse(
+              fs.readFileSync('package.json', 'utf8')
+            ).version;
+
             let previous = '';
 
-            if (before && before !== '0000000000000000000000000000000000000000') {
-              try {
-                const prevPackageJson = cp.execSync(`git show ${before}:package.json`, { encoding: 'utf8' });
-                previous = JSON.parse(prevPackageJson).version;
-              } catch {
-                previous = '';
-              }
+            try {
+              const previousCommit = cp.execSync(
+                'git rev-parse HEAD^',
+                { encoding: 'utf8' }
+              ).trim();
+
+              const previousPackage = cp.execSync(
+                `git show ${previousCommit}:package.json`,
+                { encoding: 'utf8' }
+              );
+
+              previous = JSON.parse(previousPackage).version;
+            } catch {
+              previous = '';
             }
 
-            // Only allow versions like 2.9, 3.0, 3.1 (single-digit minor, no patch segment).
-            const releasePattern = /^\d+\.\d$/;
-            const shouldTag = releasePattern.test(current) && current !== previous;
+            const semver = /^(\d+)\.(\d+)\.(\d+)$/;
+
+            const currentMatch = current.match(semver);
+            const previousMatch = previous.match(semver);
+
+            let shouldTag = false;
+
+            if (currentMatch && previousMatch) {
+              const currentMajor = Number(currentMatch[1]);
+              const previousMajor = Number(previousMatch[1]);
+
+              shouldTag = currentMajor > previousMajor;
+            }
 
             core.setOutput('current', current);
-            core.setOutput('previous', previous);
             core.setOutput('should_tag', shouldTag ? 'true' : 'false');
 
             core.info(`Current version: ${current}`);
             core.info(`Previous version: ${previous || '(unknown)'}`);
-            core.info(`Tag eligible: ${shouldTag}`);
+            core.info(`Major release: ${shouldTag}`);
 
       - name: Create and push tag
         if: steps.version_gate.outputs.should_tag == 'true'
@@ -81,25 +104,29 @@ jobs:
             const tag = `v${process.env.RELEASE_VERSION}`;
 
             try {
-              cp.execSync(`git rev-parse ${tag}`, { stdio: 'ignore' });
-              core.info(`Tag ${tag} already exists locally, skipping.`);
+              cp.execSync(
+                `git ls-remote --exit-code origin refs/tags/${tag}`,
+                { stdio: 'ignore' }
+              );
+
+              core.info(`Tag ${tag} already exists. Skipping.`);
               return;
+
             } catch {
-              // Tag does not exist locally, continue.
+              // Tag does not exist
             }
 
-            try {
-              const remoteCheck = cp.execSync(`git ls-remote --tags origin refs/tags/${tag}`, { encoding: 'utf8' }).trim();
-              if (remoteCheck) {
-                core.info(`Tag ${tag} already exists on origin, skipping.`);
-                return;
-              }
-            } catch {
-              // If this check fails, attempt tag creation/push and let it fail clearly if needed.
-            }
+            cp.execSync(
+              'git config user.name "github-actions[bot]"'
+            );
 
-            cp.execSync('git config user.name "github-actions[bot]"');
-            cp.execSync('git config user.email "41898282+github-actions[bot]@users.noreply.github.com"');
+            cp.execSync(
+              'git config user.email "41898282+github-actions[bot]@users.noreply.github.com"'
+            );
+
             cp.execSync(`git tag ${tag}`);
-            cp.execSync(`git push origin ${tag}`, { stdio: 'inherit' });
-            core.info(`Created and pushed tag ${tag}`);
+            cp.execSync(`git push origin ${tag}`, {
+              stdio: 'inherit'
+            });
+
+            core.info(`Created and pushed ${tag}`);
