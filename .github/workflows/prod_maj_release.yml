@@ -43,7 +43,6 @@ jobs:
           script: |
             const fs = require('fs');
             const cp = require('child_process');
-            const core = require('@actions/core');
 
             const current = JSON.parse(fs.readFileSync('package.json', 'utf8')).version;
             const before = '${{ github.event.before }}';
@@ -78,7 +77,6 @@ jobs:
         with:
           script: |
             const cp = require('child_process');
-            const core = require('@actions/core');
 
             const tag = `v${process.env.RELEASE_VERSION}`;
 
