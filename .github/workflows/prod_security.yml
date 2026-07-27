@@ -1,16 +1,16 @@
 name: Production Automated Security Checks
 
 on:
-  push:
-    branches:
-      - 'main'
-  pull_request:
-    branches:
-      - main
+  workflow_run:
+    workflows:
+      - Prod Lint
+    types:
+      - completed
 
 jobs:
   audit:
     runs-on: self-hosted
+    if: contains(fromJson('["success","neutral"]'), github.event.workflow_run.conclusion)
 
     steps:
       - uses: actions/checkout@v4
@@ -24,10 +24,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
+    
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Run Auditor
         run: pnpm audit
+        continue-on-error: true

@@ -1,17 +1,16 @@
 name: Dev Build
 
 on:
-  push:
-    branches:
-      - 'feature/**'
-  pull_request:
-    branches:
-      - main
+  workflow_run:
+    workflows:
+      - Dev Lint
+    types:
+      - completed
 
 jobs:
   build:
     runs-on: self-hosted
-
+    if: contains(fromJson('["success","neutral"]'), github.event.workflow_run.conclusion)
     steps:
       - uses: actions/checkout@v4
 
@@ -24,7 +23,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
+         
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
