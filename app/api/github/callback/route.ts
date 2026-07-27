@@ -83,6 +83,6 @@ export async function GET(req: NextRequest) {
 
   // 4. Redirect back to your settings/integrations page on success
   return NextResponse.redirect(
-    `https://api.fortmont.me/platform/account?section=github&linked=github`
+    `https://home.fortmont.me/platform/account?section=github&linked=github`
   );
 }

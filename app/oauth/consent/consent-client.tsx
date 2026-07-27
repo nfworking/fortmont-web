@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { useSession } from 'next-auth/react';
 
 type ClientInfo = {
   name: string;
@@ -29,6 +30,22 @@ export default function OAuthConsentPage() {
   const state = searchParams.get('state');
   const codeChallenge = searchParams.get('code_challenge');
   const codeChallengeMethod = searchParams.get('code_challenge_method');
+
+  const buildAuthorizeUrl = () => {
+    const authorize = new URL('/api/oauth/authorize', window.location.origin);
+    searchParams.forEach((value, key) => {
+      if (key !== 'consent') authorize.searchParams.set(key, value);
+    });
+    return authorize;
+  };
+
+  const buildLoginUrl = (switchAccount = false) => {
+    const login = new URL('/oauth/login', window.location.origin);
+    login.searchParams.set('callbackUrl', buildAuthorizeUrl().toString());
+    if (clientId) login.searchParams.set('client_id', clientId);
+    if (switchAccount) login.searchParams.set('switch_account', '1');
+    return login;
+  };
 
   useEffect(() => {
     if (!clientId) {
@@ -72,14 +89,7 @@ export default function OAuthConsentPage() {
 
       if (res.status === 401) {
         // Session expired mid-flow — send back through OAuth login
-        const authorize = new URL('/api/oauth/authorize', window.location.origin);
-        searchParams.forEach((value, key) => {
-          if (key !== 'consent') authorize.searchParams.set(key, value);
-        });
-        const login = new URL('/oauth/login', window.location.origin);
-        login.searchParams.set('callbackUrl', authorize.toString());
-        if (clientId) login.searchParams.set('client_id', clientId);
-        window.location.href = login.toString();
+        window.location.href = buildLoginUrl().toString();
         return;
       }
 
@@ -97,6 +107,11 @@ export default function OAuthConsentPage() {
   };
 
   const requestedScopes = scope.split(/\s+/).filter(Boolean);
+  const session = useSession();
+
+  const handleSwitchAccount = () => {
+    window.location.href = buildLoginUrl(true).toString();
+  };
 
   if (error && !clientInfo) {
     return (
@@ -120,13 +135,12 @@ export default function OAuthConsentPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-6 bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-zinc-50 to-zinc-100 p-6 dark:from-zinc-950 dark:to-zinc-900">
       <Card className="w-full max-w-lg">
         <CardHeader>
           <CardTitle>Authorize {clientInfo.name}</CardTitle>
           <CardDescription>
-            This application is requesting access to your Fortmont account. After you allow access
-            you will be sent back to the app — not the Fortmont dashboard.
+            Welcome back <strong>{session.data?.user?.name || 'user'}</strong>. {clientInfo.name} is requesting access to your account.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -152,6 +166,9 @@ export default function OAuthConsentPage() {
             disabled={submitting}
           >
             Deny
+          </Button>
+          <Button variant="ghost" onClick={handleSwitchAccount} disabled={submitting}>
+            Use a different account
           </Button>
           <Button onClick={() => postConsent('approve')} disabled={submitting}>
             {submitting ? 'Continuing...' : 'Allow'}

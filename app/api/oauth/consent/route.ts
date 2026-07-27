@@ -31,6 +31,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'login_required' }, { status: 401 });
   }
 
+  const actorUser = await prisma.appUsers.findUnique({
+    where: { id: actor.userId },
+    select: { onboarded: true },
+  });
+
   const contentType = request.headers.get('content-type') || '';
   let body: ConsentBody = {};
 
@@ -151,8 +156,19 @@ export async function POST(request: Request) {
   const params = new URLSearchParams({ code });
   if (state) params.set('state', state);
 
+  const redirectTo = appendQueryToUri(redirectUri, params);
+
+  if (actorUser?.onboarded !== true) {
+    const onboardingUrl = new URL('/onboard/user', request.url);
+    onboardingUrl.searchParams.set('callbackUrl', redirectTo);
+
+    return NextResponse.json({
+      redirect_to: onboardingUrl.toString(),
+    });
+  }
+
   return NextResponse.json({
-    redirect_to: appendQueryToUri(redirectUri, params),
+    redirect_to: redirectTo,
   });
 }
 

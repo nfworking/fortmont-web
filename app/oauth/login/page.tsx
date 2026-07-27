@@ -1,4 +1,4 @@
-import { OAuthLoginForm } from "@/components/oauth-login-form";
+import { OAuthLoginForm } from "@/components/oauth/oauth-login-form";
 import { Metadata } from "next";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";

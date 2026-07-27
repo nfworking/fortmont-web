@@ -79,6 +79,11 @@ interface PasswordStrength {
   color: string;
 }
 
+type OnboardingFlowProps = {
+  initialData?: Partial<OnboardingData>;
+  callbackUrl?: string;
+};
+
 // ---------------------------------------------------------------------------
 // Step config
 // ---------------------------------------------------------------------------
@@ -613,11 +618,7 @@ function ReviewStep({ data }: { data: OnboardingData }) {
 // Main OnboardingFlow component
 // ---------------------------------------------------------------------------
 
-export default function OnboardingFlow({
-  initialData,
-}: {
-  initialData?: Partial<OnboardingData>;
-}) {
+export default function OnboardingFlow({ initialData, callbackUrl }: OnboardingFlowProps) {
   const router = useRouter();
   const [stepIndex, setStepIndex]       = useState(0);
   const [direction, setDirection]       = useState<1 | -1>(1);
@@ -723,7 +724,7 @@ export default function OnboardingFlow({
     try {
       const res = await fetch("/api/mailbox/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Credentials": "include" },
         body: JSON.stringify({
           email: `${data.mailboxAlias}@${data.mailboxDomain}`,
           password: data.mailboxPassword,
@@ -793,10 +794,10 @@ export default function OnboardingFlow({
             <div className="flex justify-center">
               <Button
                 variant="outline"
-                onClick={() => router.replace("/dashboard")}
+                onClick={() => router.replace(callbackUrl || "/dashboard")}
                 className="gap-1.5"
               >
-                Go to dashboard
+                {callbackUrl ? "Continue to app" : "Go to dashboard"}
               </Button>
             </div>
           </CardContent>

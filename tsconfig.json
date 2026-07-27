@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "components/.legacy/account-settings-form.tsx", "components/account/active-sessions-card.tsx", "components/.legacy/blur-provider.tsx", "components/.legacy/create-dns-card.tsx", "components/.legacy/dashboard-status-panel.tsx", "components/.legacy/dns-table.tsx", "components/.legacy/EmailSidebar.tsx", "components/.legacy/logo.tsx", "components/.legacy/nav-documents.tsx", "components/.legacy/nav-secondary.tsx", "components/.legacy/transitionlayout.tsx", "components/.legacy/webmail_login.tsx"  ],
   "exclude": ["node_modules"]
 }

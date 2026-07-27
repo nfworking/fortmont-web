@@ -3,7 +3,12 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import OnboardingFlow from "@/components/onboard/onboard";
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ callbackUrl?: string }>;
+}) {
+  const params = searchParams ? await searchParams : undefined;
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -24,13 +29,14 @@ export default async function OnboardingPage() {
   });
 
   if (user?.onboarded === true) {
-    redirect("/dashboard");
+    redirect(params?.callbackUrl || "/dashboard");
   }
 
   const email = user?.email ?? session.user.email ?? "";
 
   return (
     <OnboardingFlow
+      callbackUrl={params?.callbackUrl}
       initialData={{
         displayName: user?.displayName ?? session.user.name ?? user?.username ?? "",
         avatarUrl: user?.avatarUrl ?? session.user.image ?? null,

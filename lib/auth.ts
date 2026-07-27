@@ -229,10 +229,19 @@ export async function createNewSession(userId: string) {
   const COOKIE_VERSION = parseInt(process.env.COOKIE_VERSION || "1", 10);
   let userAgent: string | null = null;
   let ipAddress: string | null = null;
+  let signInUrl: string | null = null;
   try {
     const userHeaders = await headers();
     userAgent = userHeaders.get("user-agent") || null;
     ipAddress = userHeaders.get("x-forwarded-for")?.split(",")[0].trim() || userHeaders.get("x-real-ip") || null;
+
+    const referer = userHeaders.get("referer");
+    const origin = userHeaders.get("origin");
+    const forwardedHost = userHeaders.get("x-forwarded-host");
+    const host = forwardedHost || userHeaders.get("host");
+    const forwardedProto = userHeaders.get("x-forwarded-proto");
+    const proto = forwardedProto || "https";
+    signInUrl = referer || origin || (host ? `${proto}://${host}` : null);
   } catch {
     log("Could not read headers during session creation (expected outside request lifecycle)");
   }
@@ -246,6 +255,7 @@ export async function createNewSession(userId: string) {
       sessionToken,
       userAgent,
       ipAddress,
+      signInUrl,
       cookieVersion: COOKIE_VERSION,
       expiresAt,
     },

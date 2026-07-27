@@ -13,7 +13,6 @@ export async function GET(req: NextRequest) {
 
   const isAdmin = actor.userRole === "admin" || actor.userRole === "ticket_admin";
 
-  // 4. FETCH TICKETS
   const tickets = await prisma.tickets.findMany({
     where: {
       ...(isAdmin

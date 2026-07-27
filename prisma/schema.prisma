@@ -203,6 +203,7 @@ model UserSession {
   sessionToken  String   @unique
   userAgent     String?  @db.Text
   ipAddress     String?
+  signInUrl     String?  @db.Text
   cookieVersion Int      @default(1)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
