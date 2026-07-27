@@ -98,7 +98,13 @@ export async function GET(request: Request) {
 
       if (msg.source) {
         try {
-          parsed = await simpleParser(msg.source);
+          const source =
+            typeof msg.source === "string"
+              ? msg.source
+              : Buffer.isBuffer(msg.source)
+                ? msg.source
+                : Buffer.from(msg.source);
+          parsed = await simpleParser(source);
         } catch (err) {
           console.error(`Parse error UID ${msg.uid}:`, err);
         }
