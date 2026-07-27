@@ -56,17 +56,12 @@ jobs:
             let previous = '';
 
             try {
-              const previousCommit = cp.execSync(
-                'git rev-parse HEAD^',
+              const latestTag = cp.execSync(
+                'git describe --tags --abbrev=0',
                 { encoding: 'utf8' }
               ).trim();
 
-              const previousPackage = cp.execSync(
-                `git show ${previousCommit}:package.json`,
-                { encoding: 'utf8' }
-              );
-
-              previous = JSON.parse(previousPackage).version;
+              previous = latestTag.replace(/^v/, '');
             } catch {
               previous = '';
             }
@@ -78,18 +73,22 @@ jobs:
 
             let shouldTag = false;
 
-            if (currentMatch && previousMatch) {
-              const currentMajor = Number(currentMatch[1]);
-              const previousMajor = Number(previousMatch[1]);
+            if (currentMatch) {
+              if (!previousMatch) {
+                shouldTag = true;
+              } else {
+                const currentMajor = Number(currentMatch[1]);
+                const previousMajor = Number(previousMatch[1]);
 
-              shouldTag = currentMajor > previousMajor;
+                shouldTag = currentMajor > previousMajor;
+              }
             }
 
             core.setOutput('current', current);
             core.setOutput('should_tag', shouldTag ? 'true' : 'false');
 
             core.info(`Current version: ${current}`);
-            core.info(`Previous version: ${previous || '(unknown)'}`);
+            core.info(`Latest release tag: ${previous || '(none)'}`);
             core.info(`Major release: ${shouldTag}`);
 
       - name: Create and push tag
