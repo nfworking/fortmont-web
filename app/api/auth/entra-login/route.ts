@@ -14,10 +14,10 @@ const client = jwksClient({
   jwksUri: `https://login.microsoftonline.com/${tenantId}/discovery/v2.0/keys`,
 });
 
-function getKey(header: any, callback: any) {
+function getKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) {
   client.getSigningKey(header.kid, (err, key) => {
     const signingKey = key?.getPublicKey();
-    callback(null, signingKey);
+    callback(err ?? null, signingKey);
   });
 }
 
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
   try {
     // 1. VERIFY MICROSOFT TOKEN
-    const decoded: any = await new Promise((resolve, reject) => {
+    const decoded = await new Promise<jwt.JwtPayload>((resolve, reject) => {
       jwt.verify(
         token,
         getKey,
@@ -44,14 +44,33 @@ export async function POST(req: Request) {
           issuer: `https://login.microsoftonline.com/${tenantId}/v2.0`,
         },
         (err, decoded) => {
-          if (err) reject(err);
-          else resolve(decoded);
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          if (!decoded || typeof decoded === "string") {
+            reject(new Error("Invalid token payload"));
+            return;
+          }
+
+          resolve(decoded);
         }
       );
     });
 
-    const email = decoded.email || decoded.preferred_username;
-    const name = decoded.name;
+    const email =
+      typeof decoded.email === "string"
+        ? decoded.email
+        : typeof decoded.preferred_username === "string"
+          ? decoded.preferred_username
+          : null;
+
+    if (!email) {
+      return Response.json({ error: "Token is missing a usable email" }, { status: 401 });
+    }
+
+    const name = typeof decoded.name === "string" ? decoded.name : email.split("@")[0];
 
     // 2. FIND OR CREATE USER
     const user = await prisma.appUsers.upsert({

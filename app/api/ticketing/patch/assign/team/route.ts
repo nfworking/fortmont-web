@@ -39,10 +39,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newTeam, { status: 201 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const details = error instanceof Error ? error.message : "Unknown error";
     console.error("Failed to create team:", error);
     return NextResponse.json(
-      { error: "Internal Server Error", details: error.message },
+      { error: "Internal Server Error", details },
       { status: 500 }
     );
   }

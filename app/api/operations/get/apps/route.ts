@@ -7,7 +7,7 @@ async function checkServiceStatus(url: string | null): Promise<"online" | "offli
   if (!url) return "offline";
   
   // Normalize URLs (ensure absolute pathing for external or internal fetch)
-  let targetUrl = url;
+  const targetUrl = url;
   if (url.startsWith("/")) {
     // If it's a relative local dashboard route, you can either assume it's up 
     // or point it back to your localhost port if you want a true server check:

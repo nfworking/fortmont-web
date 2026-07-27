@@ -8,6 +8,7 @@ export function useSignedUrl(fileId: string, enabled = true) {
 
   useEffect(() => {
     if (!enabled) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     fetch(`/api/storage/download?fileId=${encodeURIComponent(fileId)}`)
       .then((r) => r.json())

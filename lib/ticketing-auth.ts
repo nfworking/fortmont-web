@@ -2,6 +2,7 @@ import { decode } from 'next-auth/jwt';
 import { auth } from '@/lib/auth';
 import { getOAuthBaseUrl, verifyAccessToken } from '@/lib/oauth';
 import { prisma } from '@/lib/prisma';
+import { verifyStreamToken } from '@/lib/stream-token';
 
 const LEGACY_AUTH_JWT_SALT = 'authjs.session-token';
 
@@ -72,6 +73,29 @@ async function tryLegacyBearerToken(request: Request): Promise<TicketingActor | 
   }
 }
 
+// Handles EventSource (SSE) connections, which can't set custom headers.
+// Only accepts short-lived tokens scoped to "notifications-stream" via
+// mintStreamToken — never a general-purpose access token — so a leaked
+// URL (logs, browser history) exposes at most a 60-second, single-purpose
+// credential rather than the user's full session.
+async function tryStreamToken(request: Request): Promise<TicketingActor | null> {
+  const url = new URL(request.url);
+  const token = url.searchParams.get('token');
+  if (!token) {
+    return null;
+  }
+
+  const result = await verifyStreamToken(token);
+  if (!result) {
+    return null;
+  }
+
+  return {
+    userId: result.userId,
+    userRole: result.role ?? (await getUserRole(result.userId)),
+  };
+}
+
 async function tryCookieSession(): Promise<TicketingActor | null> {
   const session = await auth();
   if (!session?.user?.id) {
@@ -89,6 +113,7 @@ export async function resolveTicketingActor(request: Request): Promise<Ticketing
   return (
     (await tryOAuthAccessToken(request)) ||
     (await tryLegacyBearerToken(request)) ||
+    (await tryStreamToken(request)) ||
     (await tryCookieSession())
   );
 }

@@ -5,6 +5,18 @@ import { ImapFlow } from "imapflow";
 import { simpleParser } from "mailparser";
 import { resolveTicketingActor } from "@/lib/ticketing-auth";
 
+type MailboxAddress = { address?: string | null };
+type SentMessage = {
+  uid?: number;
+  envelope?: {
+    subject?: string | null;
+    to?: MailboxAddress[] | null;
+  };
+  internalDate?: Date | null;
+  flags?: unknown;
+  source?: string | Buffer | Uint8Array | null;
+};
+
 export async function GET(request: Request) {
   try {
     const actor = await resolveTicketingActor(request);
@@ -63,7 +75,7 @@ export async function GET(request: Request) {
     const start = Math.max(1, total - 49);
     const range = `${start}:*`;
 
-    const messages: any[] = [];
+    const messages: SentMessage[] = [];
 
     for await (const msg of client.fetch(range, {
       uid: true,
@@ -72,7 +84,7 @@ export async function GET(request: Request) {
       internalDate: true,
       source: true,
     })) {
-      messages.push(msg);
+      messages.push(msg as SentMessage);
     }
 
     // 7. Sort newest first
@@ -86,14 +98,20 @@ export async function GET(request: Request) {
 
       if (msg.source) {
         try {
-          parsed = await simpleParser(msg.source);
+          const source =
+            typeof msg.source === "string"
+              ? msg.source
+              : Buffer.isBuffer(msg.source)
+                ? msg.source
+                : Buffer.from(msg.source);
+          parsed = await simpleParser(source);
         } catch (err) {
           console.error(`Parse error UID ${msg.uid}:`, err);
         }
       }
 
       // Format recipient lists neatly
-      const toAddresses = msg.envelope?.to?.map((t: any) => t.address).join(", ") ?? "";
+      const toAddresses = msg.envelope?.to?.map((t) => t.address ?? "").join(", ") ?? "";
 
       emails.push({
         uid: msg.uid,

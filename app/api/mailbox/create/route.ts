@@ -9,6 +9,10 @@ function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+type MailcowResultItem = {
+  type?: string;
+};
+
 function parseEmailAddress(email: string) {
   const [local_part, domain] = email.split("@");
   if (!local_part || !domain) {
@@ -99,8 +103,9 @@ export async function POST(req: Request) {
     }
 
     const mailcowHasAppError = Array.isArray(parsedBody)
-      ? parsedBody.some((item: any) => {
-          const type = String(item?.type ?? "").toLowerCase();
+      ? parsedBody.some((item: unknown) => {
+          const typedItem = (item ?? {}) as MailcowResultItem;
+          const type = String(typedItem.type ?? "").toLowerCase();
           return type === "error" || type === "danger";
         })
       : false;
@@ -186,7 +191,7 @@ export async function POST(req: Request) {
   const senderHeader = `"Fortmont Identity Services" <${process.env.SYSTEM_SMTP_USER!}>`;
 
     // 5. Send the email via SMTP
-  const info = await transporter.sendMail({
+  await transporter.sendMail({
       from: senderHeader,
       to: mailbox.email,
       subject: "Welcome to Fortmont!",

@@ -1,0 +1,109 @@
+name: Production Major Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run build
+        run: pnpm build:cicd
+
+      - name: Check tag eligibility from package version
+        id: version_gate
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const cp = require('child_process');
+            const core = require('@actions/core');
+
+            const current = JSON.parse(fs.readFileSync('package.json', 'utf8')).version;
+            const before = '${{ github.event.before }}';
+            let previous = '';
+
+            if (before && before !== '0000000000000000000000000000000000000000') {
+              try {
+                const prevPackageJson = cp.execSync(`git show ${before}:package.json`, { encoding: 'utf8' });
+                previous = JSON.parse(prevPackageJson).version;
+              } catch {
+                previous = '';
+              }
+            }
+
+            // Only allow versions like 2.9, 3.0, 3.1 (single-digit minor, no patch segment).
+            const releasePattern = /^\d+\.\d$/;
+            const shouldTag = releasePattern.test(current) && current !== previous;
+
+            core.setOutput('current', current);
+            core.setOutput('previous', previous);
+            core.setOutput('should_tag', shouldTag ? 'true' : 'false');
+
+            core.info(`Current version: ${current}`);
+            core.info(`Previous version: ${previous || '(unknown)'}`);
+            core.info(`Tag eligible: ${shouldTag}`);
+
+      - name: Create and push tag
+        if: steps.version_gate.outputs.should_tag == 'true'
+        uses: actions/github-script@v7
+        env:
+          RELEASE_VERSION: ${{ steps.version_gate.outputs.current }}
+        with:
+          script: |
+            const cp = require('child_process');
+            const core = require('@actions/core');
+
+            const tag = `v${process.env.RELEASE_VERSION}`;
+
+            try {
+              cp.execSync(`git rev-parse ${tag}`, { stdio: 'ignore' });
+              core.info(`Tag ${tag} already exists locally, skipping.`);
+              return;
+            } catch {
+              // Tag does not exist locally, continue.
+            }
+
+            try {
+              const remoteCheck = cp.execSync(`git ls-remote --tags origin refs/tags/${tag}`, { encoding: 'utf8' }).trim();
+              if (remoteCheck) {
+                core.info(`Tag ${tag} already exists on origin, skipping.`);
+                return;
+              }
+            } catch {
+              // If this check fails, attempt tag creation/push and let it fail clearly if needed.
+            }
+
+            cp.execSync('git config user.name "github-actions[bot]"');
+            cp.execSync('git config user.email "41898282+github-actions[bot]@users.noreply.github.com"');
+            cp.execSync(`git tag ${tag}`);
+            cp.execSync(`git push origin ${tag}`, { stdio: 'inherit' });
+            core.info(`Created and pushed tag ${tag}`);
