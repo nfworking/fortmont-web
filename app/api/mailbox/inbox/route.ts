@@ -5,6 +5,18 @@ import { ImapFlow } from "imapflow";
 import { simpleParser } from "mailparser";
 import { resolveTicketingActor } from "@/lib/ticketing-auth";
 
+type MailboxEnvelopeAddress = { address?: string | null };
+type MailboxMessage = {
+  uid?: number;
+  envelope?: {
+    subject?: string | null;
+    from?: MailboxEnvelopeAddress[] | null;
+  };
+  internalDate?: Date | null;
+  flags?: unknown;
+  source?: string | Buffer | Uint8Array | null;
+};
+
 export async function GET(request: Request) {
   try {
     const actor = await resolveTicketingActor(request);
@@ -55,7 +67,7 @@ export async function GET(request: Request) {
     const start = Math.max(1, total - 49);
     const range = `${start}:*`;
 
-    const messages: any[] = [];
+    const messages: MailboxMessage[] = [];
 
     for await (const msg of client.fetch(range, {
       uid: true,
@@ -64,7 +76,7 @@ export async function GET(request: Request) {
       internalDate: true,
       source: true,
     })) {
-      messages.push(msg);
+      messages.push(msg as MailboxMessage);
     }
 
     // 6. Newest first (manual reverse fix)

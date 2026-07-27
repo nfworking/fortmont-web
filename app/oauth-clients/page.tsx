@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -17,7 +16,6 @@ type OAuthClient = {
 };
 
 export default function OAuthClientsAdmin() {
-  const { data: session } = useSession();
   const [clients, setClients] = useState<OAuthClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -25,21 +23,25 @@ export default function OAuthClientsAdmin() {
   const [newRedirect, setNewRedirect] = useState('');
   const [newScopes, setNewScopes] = useState('openid profile email');
 
-  const fetchClients = async () => {
-    setLoading(true);
+  const fetchClients = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     const res = await fetch(
       `/api/admin/oauth-client`,
       {
         headers: { 'credentials': 'include' },
       }
     );
-    const data = await res.json();
-    setClients(Array.isArray(data) ? data : []);
-    setLoading(false);
+    try {
+      const data = await res.json();
+      setClients(Array.isArray(data) ? data : []);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchClients();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchClients(false);
   }, []);
 
   const handleCreate = async () => {
@@ -62,7 +64,7 @@ export default function OAuthClientsAdmin() {
       setNewName('');
       setNewRedirect('');
       setNewScopes('openid profile email');
-      fetchClients();
+      void fetchClients(true);
     } else {
       const err = await res.text();
       alert('Failed: ' + err);
@@ -76,7 +78,7 @@ export default function OAuthClientsAdmin() {
       headers: { 'credentials': 'include', 'Content-Type': 'application/json' },
       body: JSON.stringify({ clientId }),
     });
-    if (res.ok) fetchClients();
+    if (res.ok) void fetchClients(true);
   };
 
   return (

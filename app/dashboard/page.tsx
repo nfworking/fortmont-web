@@ -30,7 +30,7 @@ export default function DashboardPage() {
           </p>
 
           <p className="text-slate-400 text-center text-sm">
-            Don't know which application to use? Head over to{" "}
+            Don&apos;t know which application to use? Head over to{" "}
             <a
               href="https://fortmont.me/platforms"
               className="text-blue-400 underline"

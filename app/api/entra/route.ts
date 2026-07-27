@@ -102,12 +102,13 @@ export async function GET(request: NextRequest) {
     }
 
     return Response.json(JSON.parse(text));
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
     console.error(`❌ Unexpected error [${resource}]:`, error);
     return Response.json(
       {
         error: "Failed to fetch from Microsoft Graph",
-        message: error.message,
+        message,
       },
       { status: 500 }
     );

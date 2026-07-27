@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">Reset your password</CardTitle>
         <CardDescription>
-          Enter your account email and we'll send you a reset link.
+          Enter your account email and we&apos;ll send you a reset link.
         </CardDescription>
       </CardHeader>
 
@@ -157,7 +157,7 @@ export default function ForgotPasswordPage() {
 
       <CardContent>
         <p className="text-xs text-muted-foreground text-center leading-relaxed">
-          Didn't receive anything? Check your spam folder or contact your IT administrator.
+          Didn&apos;t receive anything? Check your spam folder or contact your IT administrator.
         </p>
       </CardContent>
 

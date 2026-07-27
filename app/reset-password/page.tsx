@@ -352,7 +352,7 @@ function ResetPasswordInner() {
         <div className="mb-3"><AnimatedCheck /></div>
         <CardTitle className="text-lg">Password updated</CardTitle>
         <CardDescription>
-          You're signed out of all active sessions. Use your new password to sign back in.
+          You&apos;re signed out of all active sessions. Use your new password to sign back in.
         </CardDescription>
       </CardHeader>
 

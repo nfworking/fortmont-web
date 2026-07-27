@@ -9,24 +9,30 @@ const BUCKET_NAME = process.env.S3_BUCKET!;
 
 export const runtime = "nodejs";
 
-function sanitizeAppUser(user: any) {
-  if (!user) return user;
-  
-  const sanitized = { ...user };
+function sanitizeAppUser(user: unknown) {
+  if (!user || typeof user !== "object") return user;
 
-  if (sanitized.storage) {
+  const sanitized = { ...(user as Record<string, unknown>) };
+
+  const storage = sanitized.storage;
+  if (storage && typeof storage === "object") {
+    const typedStorage = storage as Record<string, unknown>;
     sanitized.storage = {
-      ...sanitized.storage,
-      quotaBytes: Number(sanitized.storage.quotaBytes),
-      usedBytes: Number(sanitized.storage.usedBytes),
+      ...typedStorage,
+      quotaBytes: Number(typedStorage.quotaBytes),
+      usedBytes: Number(typedStorage.usedBytes),
     };
   }
 
-  if (sanitized.files && Array.isArray(sanitized.files)) {
-    sanitized.files = sanitized.files.map((file: any) => ({
-      ...file,
-      size: Number(file.size),
-    }));
+  if (Array.isArray(sanitized.files)) {
+    sanitized.files = sanitized.files.map((file) => {
+      if (!file || typeof file !== "object") return file;
+      const typedFile = file as Record<string, unknown>;
+      return {
+        ...typedFile,
+        size: Number(typedFile.size),
+      };
+    });
   }
 
   return sanitized;

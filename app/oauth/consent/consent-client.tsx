@@ -48,10 +48,8 @@ export default function OAuthConsentPage() {
   };
 
   useEffect(() => {
-    if (!clientId) {
-      setError('Missing client_id');
-      return;
-    }
+    if (!clientId) return;
+
     fetch(`/api/oauth/client-info?client_id=${encodeURIComponent(clientId)}`)
       .then(async (res) => {
         if (!res.ok) throw new Error('Unknown client');
@@ -89,7 +87,7 @@ export default function OAuthConsentPage() {
 
       if (res.status === 401) {
         // Session expired mid-flow — send back through OAuth login
-        window.location.href = buildLoginUrl().toString();
+        window.location.assign(buildLoginUrl().toString());
         return;
       }
 
@@ -99,7 +97,7 @@ export default function OAuthConsentPage() {
         return;
       }
 
-      window.location.href = data.redirect_to;
+      window.location.assign(data.redirect_to);
     } catch {
       setError('Authorization failed. Please try again.');
       setSubmitting(false);
@@ -108,18 +106,19 @@ export default function OAuthConsentPage() {
 
   const requestedScopes = scope.split(/\s+/).filter(Boolean);
   const session = useSession();
+  const startupError = !clientId ? 'Missing client_id' : error;
 
   const handleSwitchAccount = () => {
-    window.location.href = buildLoginUrl(true).toString();
+    window.location.assign(buildLoginUrl(true).toString());
   };
 
-  if (error && !clientInfo) {
+  if (startupError && !clientInfo) {
     return (
       <div className="flex min-h-screen items-center justify-center p-6">
         <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle>Authorization Error</CardTitle>
-            <CardDescription>{error}</CardDescription>
+            <CardDescription>{startupError}</CardDescription>
           </CardHeader>
         </Card>
       </div>
