@@ -38,6 +38,7 @@ export async function GET(request: Request) {
         user: mailbox.email,
         pass: password,
       },
+      logger: false,
     });
 
     await client.connect();
@@ -78,8 +79,8 @@ export async function GET(request: Request) {
       if (msg.source) {
         try {
           parsed = await simpleParser(msg.source);
-        } catch (err) {
-          console.error(`Parse error UID ${msg.uid}:`, err);
+        } catch {
+          // Intentionally suppress per-message parse logs to avoid mailbox item leakage.
         }
       }
 
@@ -106,7 +107,10 @@ export async function GET(request: Request) {
       emails,
     });
   } catch (err) {
-    console.error("EMAIL_INBOX_ERROR:", err);
+    if (process.env.NODE_ENV === "development") {
+      console.error("EMAIL_INBOX_ERROR", err);
+    }
+    console.error("EMAIL_INBOX_ERROR");
 
     return NextResponse.json(
       { error: "Failed to fetch emails" },

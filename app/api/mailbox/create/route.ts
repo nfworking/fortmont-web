@@ -134,6 +134,7 @@ export async function POST(req: Request) {
         port: 993,
         secure: true,
         auth: { user: email, pass: password },
+        logger: false,
       });
 
       try {
