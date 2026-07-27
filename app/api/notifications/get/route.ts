@@ -42,8 +42,6 @@ export async function GET(req: Request) {
         );
       };
 
-      // Send current notifications immediately on connect,
-      // so the client doesn't have to wait for the next event.
       try {
         const notifications = await prisma.notifications.findMany({
           where: { userId },
@@ -54,7 +52,6 @@ export async function GET(req: Request) {
         console.error("Failed to load initial notifications:", err);
       }
 
-      // Subscribe to this user's channel for live updates.
       subscriber = await createSubscriberClient();
       await subscriber.subscribe(channel, (message) => {
         try {
@@ -87,7 +84,7 @@ export async function GET(req: Request) {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
-      "X-Accel-Buffering": "no", // disable nginx buffering if you're proxying through it
+      "X-Accel-Buffering": "no",
     },
   });
 }

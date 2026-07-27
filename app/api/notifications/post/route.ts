@@ -31,9 +31,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Publish to anyone with an open SSE connection for this user.
-    // If nobody's subscribed, this is a no-op — the notification
-    // is still in the DB and shows up next time they connect.
     const redisClient = await getRedis();
     await redisClient.publish(
       notificationChannel(user.id),
