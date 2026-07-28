@@ -28,7 +28,7 @@ jobs:
       - name: Run Linter
         run: pnpm lint
 
-      - name: Run tests
+      - name: Run build
         run: pnpm build:cicd
 
       - name: Security scans
