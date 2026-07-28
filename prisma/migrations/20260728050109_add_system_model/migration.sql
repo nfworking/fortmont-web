@@ -1,0 +1,30 @@
+-- CreateTable
+CREATE TABLE `SystemConfig` (
+    `id` INTEGER NOT NULL DEFAULT 1,
+    `initialized` BOOLEAN NOT NULL DEFAULT false,
+    `appVersion` VARCHAR(191) NULL,
+    `proxmoxBaseUrl` VARCHAR(191) NULL,
+    `proxmoxApiToken` VARCHAR(191) NULL,
+    `dnsApiToken` VARCHAR(191) NULL,
+    `dnsRecordsEndpoint` VARCHAR(191) NULL,
+    `dnsRecordsAddEndpoint` VARCHAR(191) NULL,
+    `proxyServerHost` VARCHAR(191) NULL,
+    `proxyApiToken` VARCHAR(191) NULL,
+    `smtpHost` VARCHAR(191) NULL,
+    `smtpUser` VARCHAR(191) NULL,
+    `smtpPassword` VARCHAR(191) NULL,
+    `imapHost` VARCHAR(191) NULL,
+    `s3Endpoint` VARCHAR(191) NULL,
+    `s3AccessKey` VARCHAR(191) NULL,
+    `s3SecretKey` VARCHAR(191) NULL,
+    `s3Region` VARCHAR(191) NULL DEFAULT 'us-east-1',
+    `s3Bucket` VARCHAR(191) NULL DEFAULT 'fortmont-api',
+    `unifiBaseUrl` VARCHAR(191) NULL,
+    `unifiApiKey` VARCHAR(191) NULL,
+    `unifiSiteId` VARCHAR(191) NULL,
+    `unifiSelfSigned` BOOLEAN NOT NULL DEFAULT false,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

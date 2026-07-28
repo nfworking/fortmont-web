@@ -395,3 +395,41 @@ model OAuthToken {
   expiresAt DateTime
   revoked   Boolean  @default(false)
 }
+
+model SystemConfig {
+  id Int @id @default(1)
+
+  initialized Boolean @default(false)
+
+  appVersion String?
+
+  proxmoxBaseUrl   String?
+  proxmoxApiToken  String?
+
+  dnsApiToken            String?
+  dnsRecordsEndpoint     String?
+  dnsRecordsAddEndpoint  String?
+
+  proxyServerHost String?
+  proxyApiToken   String?
+
+  smtpHost     String?
+  smtpUser     String?
+  smtpPassword String?
+
+  imapHost String?
+
+  s3Endpoint   String?
+  s3AccessKey  String?
+  s3SecretKey  String?
+  s3Region     String? @default("us-east-1")
+  s3Bucket     String? @default("fortmont-api")
+
+  unifiBaseUrl   String?
+  unifiApiKey    String?
+  unifiSiteId    String?
+  unifiSelfSigned Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
