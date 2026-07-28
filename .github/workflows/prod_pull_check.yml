@@ -31,6 +31,6 @@ jobs:
       - name: Run tests
         run: pnpm build:cicd
 
-      - name: Security scan
+      - name: Security scans
         run: pnpm audit
         continue-on-error: true
