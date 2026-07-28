@@ -1,46 +1,54 @@
 import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
-import { resolveTicketingActor } from "@/lib/ticketing-auth";
 
-export const dynamic = "force-dynamic";
+export async function GET() {
+  try {
+    const config = await prisma.systemConfig.findUnique({
+      where: { id: 1 },
+      select: {
+        proxmoxApiToken: true,
+        proxmoxBaseUrl: true,
+      },
+    });
 
-export async function GET(req: NextRequest) {
-  const actor = await resolveTicketingActor(req);
+    if (!config?.proxmoxApiToken || !config.proxmoxBaseUrl) {
+      return Response.json(
+        { error: "Missing Proxmox configuration" },
+        { status: 500 }
+      );
+    }
 
-  if (!actor?.userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const res = await fetch(
+      `${config.proxmoxBaseUrl}/api2/json/nodes`,
+      {
+        headers: {
+          Authorization: config.proxmoxApiToken,
+        },
+        cache: "no-store",
+      }
+    );
+
+    if (!res.ok) {
+      const details = await res.text();
+
+      return Response.json(
+        {
+          error: "Proxmox request failed",
+          details,
+        },
+        { status: res.status }
+      );
+    }
+
+    const json = await res.json();
+
+    return Response.json(json);
+
+  } catch (err) {
+    return Response.json(
+      {
+        error: err instanceof Error ? err.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
-
-  const isAdmin = actor.userRole === "admin" || actor.userRole === "ticket_admin";
-
-  const tickets = await prisma.tickets.findMany({
-    where: {
-      ...(isAdmin
-        ? {
-            OR: [
-              { status: null },
-              { status: { not: "closed" } },
-              { assignedToId: null },
-            ],
-          }
-        : {
-            assignedToId: actor.userId,
-            OR: [{ status: null }, { status: { not: "closed" } }],
-          }),
-    },
-    include: {
-      createdBy: true,
-      assignedTo: true,
-      comments: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  return NextResponse.json(tickets, {
-    headers: {
-      "Cache-Control": "no-store, max-age=0",
-    },
-  });
 }
